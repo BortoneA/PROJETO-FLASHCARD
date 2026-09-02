@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { submitCardReview } from "@/app/actions/flashcards";
-import { Sparkles, CheckCircle2, RotateCcw, Flame, Zap, ArrowLeft, Volume2, Layers } from "lucide-react";
+import { Sparkles, CheckCircle2, RotateCcw, Flame, Zap, ArrowLeft, Layers } from "lucide-react";
 import confetti from "canvas-confetti";
 import Link from "next/link";
 
@@ -163,57 +163,47 @@ export default function FlashcardDeck({
         />
       </div>
 
-      {/* Card 3D Flip */}
+      {/* Container de Cartão de Estudo (Com exibição da Pergunta e da Resposta quando virado) */}
       <div
-        className="w-full h-[380px] cursor-pointer perspective-1000 select-none mb-8"
+        className="w-full min-h-[380px] cursor-pointer select-none mb-8"
         onClick={() => setIsFlipped((prev) => !prev)}
       >
         <motion.div
-          className="relative w-full h-full rounded-[2.5rem] p-8 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-3xl border border-white/40 dark:border-zinc-800/90 shadow-[0_25px_60px_rgba(0,0,0,0.12)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.7)] flex flex-col items-center justify-center text-center transform-gpu transition-all duration-500 hover:border-[#0071e3]/40"
-          animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-          style={{ transformStyle: "preserve-3d" }}
+          key={currentCard.id}
+          initial={{ scale: 0.96, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="w-full h-full rounded-[2.5rem] p-8 sm:p-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl border border-white/50 dark:border-zinc-800/90 shadow-[0_25px_60px_rgba(0,0,0,0.12)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.7)] flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-[#0071e3]/40"
         >
-          {/* Frente do Card */}
-          <div
-            className={`absolute inset-0 p-8 flex flex-col items-center justify-center ${
-              isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
-            }`}
-            style={{ backfaceVisibility: "hidden" }}
-          >
-            <span className="text-xs uppercase tracking-widest font-extrabold text-[#0071e3] bg-[#0071e3]/10 px-3 py-1 rounded-full mb-6">
-              Pergunta / Termo
-            </span>
-            <h3 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white leading-snug">
-              {currentCard.front}
-            </h3>
-            <p className="text-xs text-zinc-400 mt-10 flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800/80 px-3 py-1.5 rounded-xl">
-              Clique ou Pressione <kbd className="px-2 py-0.5 bg-white dark:bg-zinc-700 rounded border border-zinc-300 dark:border-zinc-600 font-mono">Espaço</kbd> para virar
-            </p>
-          </div>
-
-          {/* Verso do Card */}
-          <div
-            className={`absolute inset-0 p-8 flex flex-col items-center justify-center ${
-              isFlipped ? "opacity-100" : "pointer-events-none opacity-0"
-            }`}
-            style={{
-              backfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
-            }}
-          >
-            <span className="text-xs uppercase tracking-widest font-extrabold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full mb-6">
-              Resposta
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white leading-relaxed mb-4">
-              {currentCard.back}
-            </h3>
-            {currentCard.extra && (
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 italic bg-zinc-100/60 dark:bg-zinc-800/60 p-3.5 rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50">
-                {currentCard.extra}
+          {/* LADO FRENTE (PERGUNTA) */}
+          {!isFlipped ? (
+            <div className="flex flex-col items-center justify-center py-6 w-full">
+              <span className="text-xs uppercase tracking-widest font-extrabold text-[#0071e3] bg-[#0071e3]/10 px-3.5 py-1.5 rounded-full mb-6">
+                Pergunta / Termo
+              </span>
+              <h3 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white leading-snug">
+                {currentCard.front}
+              </h3>
+              <p className="text-xs text-zinc-400 mt-10 flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800/80 px-3.5 py-2 rounded-xl">
+                Clique ou Pressione <kbd className="px-2 py-0.5 bg-white dark:bg-zinc-700 rounded border border-zinc-300 dark:border-zinc-600 font-mono text-zinc-800 dark:text-zinc-200">Espaço</kbd> para virar
               </p>
-            )}
-          </div>
+            </div>
+          ) : (
+            /* LADO VERSO (RESPOSTA) */
+            <div className="flex flex-col items-center justify-center py-4 w-full animate-in fade-in duration-300">
+              <span className="text-xs uppercase tracking-widest font-extrabold text-emerald-500 bg-emerald-500/10 px-3.5 py-1.5 rounded-full mb-4">
+                Resposta
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white leading-relaxed mb-4">
+                {currentCard.back}
+              </h3>
+              {currentCard.extra && (
+                <p className="text-sm text-zinc-600 dark:text-zinc-300 italic bg-zinc-100/80 dark:bg-zinc-800/80 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 max-w-md">
+                  {currentCard.extra}
+                </p>
+              )}
+            </div>
+          )}
         </motion.div>
       </div>
 
