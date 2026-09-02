@@ -15,6 +15,7 @@ export async function getDecks() {
   const now = new Date();
 
   return decks.map((deck) => {
+    // Aponta estritamente para cards cuja data de revisão seja anterior ou igual a AGORA
     const dueCards = deck.cards.filter(
       (c) => new Date(c.nextReviewDate) <= now
     );
@@ -47,12 +48,15 @@ export async function deleteDeck(id: string) {
   revalidatePath("/");
 }
 
+/**
+ * Retorna ESTRITAMENTE os cards que estão vencidos/devidos para a data de hoje.
+ * Se o card já foi assimilado/respondido com sucesso, ele NÃO retornará até a sua próxima data agendada (nextReviewDate).
+ */
 export async function getDueCardsForDeck(deckId: string) {
   const now = new Date();
 
   if (deckId === "all") {
-    // Busca cards atrasados/devidos de TODOS os baralhos
-    const cards = await db.card.findMany({
+    return await db.card.findMany({
       where: {
         nextReviewDate: {
           lte: now,
@@ -65,22 +69,9 @@ export async function getDueCardsForDeck(deckId: string) {
         nextReviewDate: "asc",
       },
     });
-
-    if (cards.length === 0) {
-      // Se não houver nenhum devido em nenhum baralho, traz os 30 cards mais novos de todos os baralhos
-      return await db.card.findMany({
-        include: {
-          deck: true,
-        },
-        orderBy: { createdAt: "asc" },
-        take: 30,
-      });
-    }
-
-    return cards;
   }
 
-  const cards = await db.card.findMany({
+  return await db.card.findMany({
     where: {
       deckId,
       nextReviewDate: {
@@ -94,20 +85,6 @@ export async function getDueCardsForDeck(deckId: string) {
       nextReviewDate: "asc",
     },
   });
-
-  if (cards.length === 0) {
-    // Se não tiver nenhum atrasado/devido, traz também os cards NOVOS do deck específico
-    return await db.card.findMany({
-      where: { deckId },
-      include: {
-        deck: true,
-      },
-      orderBy: { createdAt: "asc" },
-      take: 20,
-    });
-  }
-
-  return cards;
 }
 
 export async function createCard(deckId: string, front: string, back: string, extra?: string) {
@@ -117,6 +94,8 @@ export async function createCard(deckId: string, front: string, back: string, ex
       front,
       back,
       extra,
+      // Card novo é disponibilizado imediatamente
+      nextReviewDate: new Date(),
     },
   });
   revalidatePath(`/study/${deckId}`);

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { submitCardReview } from "@/app/actions/flashcards";
-import { Sparkles, CheckCircle2, RotateCcw, Flame, Zap, ArrowLeft, Layers } from "lucide-react";
+import { Sparkles, CheckCircle2, RotateCcw, Flame, Zap, ArrowLeft, Layers, PartyPopper } from "lucide-react";
 import confetti from "canvas-confetti";
 import Link from "next/link";
 
@@ -90,39 +90,37 @@ export default function FlashcardDeck({
     }
   };
 
-  if (!currentCard || currentIndex >= cards.length) {
+  // NENHUM CARD DEVIDO PARA HOJE / SESSÃO CONCLUÍDA
+  if (!currentCard || cards.length === 0 || currentIndex >= cards.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] text-center px-4 py-6">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white/80 dark:bg-zinc-900/90 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800 p-6 sm:p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full"
+          className="bg-zinc-900/90 backdrop-blur-2xl border border-zinc-800 p-6 sm:p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full"
         >
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-            <CheckCircle2 size={40} />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-500/20">
+            <PartyPopper size={36} />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white mb-2">Sessão Concluída!</h2>
-          <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed">
-            Você revisou <span className="font-bold text-emerald-500">{completedCount}</span> cards hoje com sincronização em tempo real!
+
+          <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
+            {cards.length === 0 ? "Tudo em Dia!" : "Sessão Concluída!"}
+          </h2>
+
+          <p className="text-sm sm:text-base text-zinc-400 mb-8 leading-relaxed">
+            {cards.length === 0 ? (
+              <>Não há nenhum card devido para revisão neste momento. Seus estudos foram <span className="font-bold text-emerald-400">assimilados</span> e serão agendados automaticamente pelo sistema de repetição espaçada!</>
+            ) : (
+              <>Você revisou <span className="font-bold text-emerald-400">{completedCount}</span> cards com sucesso! Eles reaparecerão somente na data futura agendada pelo algoritmo Anki SM-2.</>
+            )}
           </p>
 
-          <div className="flex flex-col gap-3">
-            <Link
-              href="/"
-              className="w-full py-3.5 sm:py-4 px-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold rounded-2xl hover:bg-zinc-200 transition text-center text-sm sm:text-base"
-            >
-              Voltar ao Início
-            </Link>
-            <button
-              onClick={() => {
-                setCurrentIndex(0);
-                setCompletedCount(0);
-              }}
-              className="w-full py-3.5 sm:py-4 px-4 bg-[#0071e3] text-white font-bold rounded-2xl hover:bg-[#005bb5] transition flex items-center justify-center gap-2 shadow-lg shadow-[#0071e3]/30 text-sm sm:text-base"
-            >
-              <RotateCcw size={18} /> Estudar Novamente
-            </button>
-          </div>
+          <Link
+            href="/"
+            className="w-full py-4 px-4 bg-[#0071e3] hover:bg-[#005bb5] text-white font-extrabold rounded-2xl transition text-center shadow-lg shadow-[#0071e3]/30 block text-sm sm:text-base"
+          >
+            Voltar à Central de Baralhos
+          </Link>
         </motion.div>
       </div>
     );
@@ -130,7 +128,7 @@ export default function FlashcardDeck({
 
   return (
     <div className="max-w-xl mx-auto px-4 py-4 sm:py-8 flex flex-col items-center">
-      {/* Header com Navegação e Stats - Otimizado Mobile */}
+      {/* Header com Navegação e Stats */}
       <div className="w-full flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
         <Link
           href="/"
@@ -207,7 +205,7 @@ export default function FlashcardDeck({
         </motion.div>
       </div>
 
-      {/* Botões de Resposta Anki (SM-2) - Otimizados Touch de 44px+ */}
+      {/* Botões de Resposta Anki (SM-2) */}
       <AnimatePresence>
         {isFlipped ? (
           <motion.div
