@@ -229,7 +229,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   {deck.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed">
-                  {deck.description || "Sem descri🌱o disponível."}
+                  {deck.description || "Sem descrição disponível."}
                 </p>
 
                 <div className="flex items-center gap-3 mt-4 text-[11px] sm:text-xs text-zinc-400 font-semibold">
@@ -237,7 +237,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     {deck.totalCards} cards
                   </span>
-                  <span>⚡</span>
+                  <span>•</span>
                   <span className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     {deck.newCardsCount} novos
@@ -245,7 +245,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 </div>
               </div>
 
-              {/* Bot⚡es Otimizados para Toque */}
+              {/* Botões Otimizados para Toque */}
               <div className="flex items-center gap-2 mt-6 pt-4 border-t border-zinc-800/60">
                 <Link
                   href={`/study/${deck.id}`}
