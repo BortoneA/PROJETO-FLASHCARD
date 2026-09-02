@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
@@ -14,7 +14,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [icon, setIcon] = useState("?");
+  const [icon, setIcon] = useState("⚡");
 
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
@@ -62,9 +62,9 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
   return (
     <div className="space-y-6 sm:space-y-10 pb-12">
-      {/* Widget Gamificado de N?vel & Const?ncia (Apple Activity Style) - Mobile Responsivo */}
+      {/* Widget Gamificado de Nível & Constância (Apple Activity Style) - Mobile Responsivo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card de N?vel e XP */}
+        {/* Card de Nível e XP */}
         <div className="md:col-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-950 p-5 sm:p-6 border border-zinc-800 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -73,10 +73,10 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               </div>
               <div>
                 <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-[#0071e3]">
-                  N?vel de Reten??o
+                  Nível de Retenção
                 </span>
                 <h3 className="text-base sm:text-xl font-bold text-white flex items-center gap-1.5">
-                  Mestre Anki N?vel {level} <Trophy size={16} className="text-amber-400" />
+                  Mestre Anki Nível {level} <Trophy size={16} className="text-amber-400" />
                 </h3>
               </div>
             </div>
@@ -92,7 +92,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           {/* Barra de XP */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-[11px] sm:text-xs font-semibold text-zinc-400">
-              <span>Progresso para N?vel {level + 1}</span>
+              <span>Progresso para Nível {level + 1}</span>
               <span>{levelProgress}% ({xp} / {nextLevelXp} XP)</span>
             </div>
             <div className="w-full h-2.5 sm:h-3 bg-zinc-800 rounded-full overflow-hidden p-0.5 border border-zinc-700/50">
@@ -106,11 +106,11 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           </div>
         </div>
 
-        {/* Card de Const?ncia (Streak) */}
+        {/* Card de Constância (Streak) */}
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 p-5 sm:p-6 border border-amber-500/20 shadow-xl flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-400 flex items-center gap-1">
-              <Flame size={14} /> Const?ncia Di?ria
+              <Flame size={14} /> Constância Diária
             </span>
             <Award size={18} className="text-amber-400" />
           </div>
@@ -118,10 +118,10 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           <div className="my-2">
             <div className="text-3xl sm:text-4xl font-black text-white flex items-baseline gap-2">
               <span>{streak}</span>
-              <span className="text-xs sm:text-sm font-bold text-amber-400">Dias Seguidos ??</span>
+              <span className="text-xs sm:text-sm font-bold text-amber-400">Dias Seguidos 🔥</span>
             </div>
             <p className="text-[11px] sm:text-xs text-zinc-400 mt-1">
-              Pratique diariamente para manter sua const?ncia de aprendizado ativa!
+              Pratique diariamente para manter sua constância de aprendizado ativa!
             </p>
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
             </h1>
 
             <p className="text-blue-100/80 text-xs sm:text-base font-normal leading-relaxed">
-              Sincroniza??o em tempo real no Neon DB. Revise baralhos individuais ou estude <span className="font-semibold text-white">todos os cards pendentes</span>.
+              Sincronização em tempo real no Neon DB. Revise baralhos individuais ou estude <span className="font-semibold text-white">todos os cards pendentes</span>.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-1 sm:pt-2 text-[11px] sm:text-xs font-semibold text-blue-200">
@@ -220,7 +220,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   {deck.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed">
-                  {deck.description || "Sem descri??o dispon?vel."}
+                  {deck.description || "Sem descrição disponível."}
                 </p>
 
                 <div className="flex items-center gap-3 mt-4 text-[11px] sm:text-xs text-zinc-400 font-semibold">
@@ -228,7 +228,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     {deck.totalCards} cards
                   </span>
-                  <span>?</span>
+                  <span>•</span>
                   <span className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     {deck.newCardsCount} novos
@@ -236,7 +236,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 </div>
               </div>
 
-              {/* Bot?es Otimizados para Toque */}
+              {/* Botões Otimizados para Toque */}
               <div className="flex items-center gap-2 mt-6 pt-4 border-t border-zinc-800/60">
                 <Link
                   href={`/study/${deck.id}`}
@@ -281,7 +281,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
             <h2 className="text-xl font-bold text-white mb-5">Criar Novo Baralho</h2>
             <form onSubmit={handleCreateDeck} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">?cone Emoji</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Ícone Emoji</label>
                 <input
                   type="text"
                   value={icon}
@@ -290,7 +290,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">T?tulo do Baralho</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Título do Baralho</label>
                 <input
                   type="text"
                   required
@@ -301,11 +301,11 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Descri??o (Opcional)</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Descrição (Opcional)</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Breve resumo do conte?do deste deck"
+                  placeholder="Breve resumo do conteúdo deste deck"
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
@@ -347,7 +347,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   required
                   value={front}
                   onChange={(e) => setFront(e.target.value)}
-                  placeholder="Ex: Qual ? a fun??o da Mitoc?ndria?"
+                  placeholder="Ex: Qual é a função da Mitocôndria?"
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
@@ -357,17 +357,17 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   required
                   value={back}
                   onChange={(e) => setBack(e.target.value)}
-                  placeholder="Ex: Produ??o de ATP atrav?s da respira??o celular."
+                  placeholder="Ex: Produção de ATP através da respiração celular."
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Informa??o Extra (Opcional)</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Informação Extra (Opcional)</label>
                 <input
                   type="text"
                   value={extra}
                   onChange={(e) => setExtra(e.target.value)}
-                  placeholder="Ex: Conhecida como a usina de energia da c?lula."
+                  placeholder="Ex: Conhecida como a usina de energia da célula."
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
