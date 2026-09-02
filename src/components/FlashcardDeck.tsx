@@ -64,8 +64,8 @@ export default function FlashcardDeck({
 
     if (rating === 4) {
       confetti({
-        particleCount: 60,
-        spread: 70,
+        particleCount: 50,
+        spread: 60,
         origin: { y: 0.8 },
         colors: ["#0071e3", "#34c759", "#af52de", "#ff9500", "#5856d6"],
       });
@@ -92,24 +92,24 @@ export default function FlashcardDeck({
 
   if (!currentCard || currentIndex >= cards.length) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[75vh] text-center px-4">
+      <div className="flex flex-col items-center justify-center min-h-[80vh] text-center px-4 py-6">
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800 p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full"
+          className="bg-white/80 dark:bg-zinc-900/90 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800 p-6 sm:p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full"
         >
-          <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-            <CheckCircle2 size={48} />
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <CheckCircle2 size={40} />
           </div>
-          <h2 className="text-3xl font-black text-zinc-900 dark:text-white mb-2">Sessão Concluída!</h2>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed">
+          <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white mb-2">Sessão Concluída!</h2>
+          <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 mb-8 leading-relaxed">
             Você revisou <span className="font-bold text-emerald-500">{completedCount}</span> cards hoje com sincronização em tempo real!
           </p>
 
           <div className="flex flex-col gap-3">
             <Link
               href="/"
-              className="w-full py-4 px-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold rounded-2xl hover:bg-zinc-200 transition text-center"
+              className="w-full py-3.5 sm:py-4 px-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold rounded-2xl hover:bg-zinc-200 transition text-center text-sm sm:text-base"
             >
               Voltar ao Início
             </Link>
@@ -118,7 +118,7 @@ export default function FlashcardDeck({
                 setCurrentIndex(0);
                 setCompletedCount(0);
               }}
-              className="w-full py-4 px-4 bg-[#0071e3] text-white font-bold rounded-2xl hover:bg-[#005bb5] transition flex items-center justify-center gap-2 shadow-lg shadow-[#0071e3]/30"
+              className="w-full py-3.5 sm:py-4 px-4 bg-[#0071e3] text-white font-bold rounded-2xl hover:bg-[#005bb5] transition flex items-center justify-center gap-2 shadow-lg shadow-[#0071e3]/30 text-sm sm:text-base"
             >
               <RotateCcw size={18} /> Estudar Novamente
             </button>
@@ -129,33 +129,33 @@ export default function FlashcardDeck({
   }
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-8 flex flex-col items-center">
-      {/* Header com Navegação e Stats */}
-      <div className="w-full flex items-center justify-between mb-8">
+    <div className="max-w-xl mx-auto px-4 py-4 sm:py-8 flex flex-col items-center">
+      {/* Header com Navegação e Stats - Otimizado Mobile */}
+      <div className="w-full flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
         <Link
           href="/"
-          className="flex items-center gap-2 text-sm font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition bg-zinc-100 dark:bg-zinc-800/80 px-4 py-2 rounded-full border border-zinc-200/50 dark:border-zinc-700/50"
+          className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-zinc-400 hover:text-white transition bg-zinc-900/80 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-zinc-800"
         >
-          <ArrowLeft size={16} /> {deckTitle}
+          <ArrowLeft size={14} /> <span className="truncate max-w-[120px] sm:max-w-[200px]">{deckTitle}</span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {currentCard.deck && (
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/10 text-purple-500 dark:text-purple-400 rounded-full text-xs font-bold border border-purple-500/20">
-              <Layers size={13} /> {currentCard.deck.title}
+            <span className="hidden xs:inline-flex items-center gap-1 px-2.5 py-1 bg-purple-500/10 text-purple-400 rounded-full text-[11px] font-bold border border-purple-500/20 truncate max-w-[100px]">
+              <Layers size={12} /> {currentCard.deck.title}
             </span>
           )}
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 rounded-full text-xs font-bold border border-amber-500/20">
-            <Flame size={14} /> {streak} Streak
+          <div className="flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-full text-[11px] font-bold border border-amber-500/20">
+            <Flame size={12} /> {streak}
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-[#0071e3]/10 text-[#0071e3] rounded-full text-xs font-bold border border-[#0071e3]/20">
-            <Zap size={14} /> Sync Neon
+          <div className="flex items-center gap-1 px-2.5 py-1 bg-[#0071e3]/10 text-[#0071e3] rounded-full text-[11px] font-bold border border-[#0071e3]/20">
+            <Zap size={12} /> Sync
           </div>
         </div>
       </div>
 
       {/* Barra de Progresso */}
-      <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden mb-8 shadow-inner">
+      <div className="w-full h-1.5 sm:h-2 bg-zinc-800 rounded-full overflow-hidden mb-6 shadow-inner">
         <motion.div
           className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"
           initial={{ width: 0 }}
@@ -163,42 +163,42 @@ export default function FlashcardDeck({
         />
       </div>
 
-      {/* Container de Cartão de Estudo (Com exibição da Pergunta e da Resposta quando virado) */}
+      {/* Container do Card Otimizado para Touch */}
       <div
-        className="w-full min-h-[380px] cursor-pointer select-none mb-8"
+        className="w-full min-h-[300px] sm:min-h-[360px] cursor-pointer select-none mb-6 touch-manipulation"
         onClick={() => setIsFlipped((prev) => !prev)}
       >
         <motion.div
           key={currentCard.id}
-          initial={{ scale: 0.96, opacity: 0 }}
+          initial={{ scale: 0.97, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="w-full h-full rounded-[2.5rem] p-8 sm:p-10 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-3xl border border-white/50 dark:border-zinc-800/90 shadow-[0_25px_60px_rgba(0,0,0,0.12)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.7)] flex flex-col items-center justify-center text-center transition-all duration-300 hover:border-[#0071e3]/40"
+          transition={{ duration: 0.25 }}
+          className="w-full h-full rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 bg-zinc-900/90 backdrop-blur-3xl border border-zinc-800 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center text-center transition-all duration-200 active:scale-[0.99]"
         >
           {/* LADO FRENTE (PERGUNTA) */}
           {!isFlipped ? (
-            <div className="flex flex-col items-center justify-center py-6 w-full">
-              <span className="text-xs uppercase tracking-widest font-extrabold text-[#0071e3] bg-[#0071e3]/10 px-3.5 py-1.5 rounded-full mb-6">
+            <div className="flex flex-col items-center justify-center py-4 w-full">
+              <span className="text-[10px] sm:text-xs uppercase tracking-widest font-extrabold text-[#0071e3] bg-[#0071e3]/10 px-3 py-1 rounded-full mb-4 sm:mb-6">
                 Pergunta / Termo
               </span>
-              <h3 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 dark:text-white leading-snug">
+              <h3 className="text-2xl sm:text-4xl font-extrabold text-white leading-snug break-words max-w-full">
                 {currentCard.front}
               </h3>
-              <p className="text-xs text-zinc-400 mt-10 flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800/80 px-3.5 py-2 rounded-xl">
-                Clique ou Pressione <kbd className="px-2 py-0.5 bg-white dark:bg-zinc-700 rounded border border-zinc-300 dark:border-zinc-600 font-mono text-zinc-800 dark:text-zinc-200">Espaço</kbd> para virar
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-8 sm:mt-10 flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-xl">
+                Toque no card para virar 🔄
               </p>
             </div>
           ) : (
             /* LADO VERSO (RESPOSTA) */
-            <div className="flex flex-col items-center justify-center py-4 w-full animate-in fade-in duration-300">
-              <span className="text-xs uppercase tracking-widest font-extrabold text-emerald-500 bg-emerald-500/10 px-3.5 py-1.5 rounded-full mb-4">
+            <div className="flex flex-col items-center justify-center py-2 w-full animate-in fade-in duration-200">
+              <span className="text-[10px] sm:text-xs uppercase tracking-widest font-extrabold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full mb-3 sm:mb-4">
                 Resposta
               </span>
-              <h3 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white leading-relaxed mb-4">
+              <h3 className="text-xl sm:text-3xl font-bold text-white leading-relaxed mb-3 sm:mb-4 break-words max-w-full">
                 {currentCard.back}
               </h3>
               {currentCard.extra && (
-                <p className="text-sm text-zinc-600 dark:text-zinc-300 italic bg-zinc-100/80 dark:bg-zinc-800/80 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 max-w-md">
+                <p className="text-xs sm:text-sm text-zinc-300 italic bg-zinc-800/80 p-3 sm:p-4 rounded-2xl border border-zinc-700/50 max-w-md">
                   {currentCard.extra}
                 </p>
               )}
@@ -207,49 +207,45 @@ export default function FlashcardDeck({
         </motion.div>
       </div>
 
-      {/* Botões de Resposta Anki (SM-2) */}
+      {/* Botões de Resposta Anki (SM-2) - Otimizados Touch de 44px+ */}
       <AnimatePresence>
         {isFlipped ? (
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
+            initial={{ y: 15, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
-            className="w-full grid grid-cols-4 gap-3"
+            exit={{ y: 15, opacity: 0 }}
+            className="w-full grid grid-cols-4 gap-2 sm:gap-3"
           >
             <button
               onClick={() => handleAnswer(1)}
-              className="group flex flex-col items-center py-4 px-2 rounded-2xl bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 transition-all duration-200 shadow-lg hover:shadow-rose-500/25 active:scale-95"
+              className="group flex flex-col items-center py-3 sm:py-4 px-1 rounded-2xl bg-rose-500/15 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 transition-all duration-150 active:scale-95 touch-manipulation min-h-[56px] justify-center"
             >
-              <span className="text-xs text-rose-400 group-hover:text-rose-100 font-medium">10 min</span>
-              <span className="font-extrabold text-base">Again</span>
-              <span className="text-[10px] opacity-60">Tecla 1</span>
+              <span className="text-[10px] sm:text-xs text-rose-300 font-medium">10 min</span>
+              <span className="font-black text-xs sm:text-base">Again</span>
             </button>
 
             <button
               onClick={() => handleAnswer(2)}
-              className="group flex flex-col items-center py-4 px-2 rounded-2xl bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white border border-amber-500/20 transition-all duration-200 shadow-lg hover:shadow-amber-500/25 active:scale-95"
+              className="group flex flex-col items-center py-3 sm:py-4 px-1 rounded-2xl bg-amber-500/15 hover:bg-amber-500 text-amber-400 hover:text-white border border-amber-500/30 transition-all duration-150 active:scale-95 touch-manipulation min-h-[56px] justify-center"
             >
-              <span className="text-xs text-amber-400 group-hover:text-amber-100 font-medium">1 dia</span>
-              <span className="font-extrabold text-base">Hard</span>
-              <span className="text-[10px] opacity-60">Tecla 2</span>
+              <span className="text-[10px] sm:text-xs text-amber-300 font-medium">1 dia</span>
+              <span className="font-black text-xs sm:text-base">Hard</span>
             </button>
 
             <button
               onClick={() => handleAnswer(3)}
-              className="group flex flex-col items-center py-4 px-2 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white border border-emerald-500/20 transition-all duration-200 shadow-lg hover:shadow-emerald-500/25 active:scale-95"
+              className="group flex flex-col items-center py-3 sm:py-4 px-1 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 transition-all duration-150 active:scale-95 touch-manipulation min-h-[56px] justify-center"
             >
-              <span className="text-xs text-emerald-400 group-hover:text-emerald-100 font-medium">3 dias</span>
-              <span className="font-extrabold text-base">Good</span>
-              <span className="text-[10px] opacity-60">Tecla 3</span>
+              <span className="text-[10px] sm:text-xs text-emerald-300 font-medium">3 dias</span>
+              <span className="font-black text-xs sm:text-base">Good</span>
             </button>
 
             <button
               onClick={() => handleAnswer(4)}
-              className="group flex flex-col items-center py-4 px-2 rounded-2xl bg-[#0071e3]/10 hover:bg-[#0071e3] text-[#0071e3] hover:text-white border border-[#0071e3]/20 transition-all duration-200 shadow-lg hover:shadow-[#0071e3]/25 active:scale-95"
+              className="group flex flex-col items-center py-3 sm:py-4 px-1 rounded-2xl bg-[#0071e3]/15 hover:bg-[#0071e3] text-[#0071e3] hover:text-white border border-[#0071e3]/30 transition-all duration-150 active:scale-95 touch-manipulation min-h-[56px] justify-center"
             >
-              <span className="text-xs text-blue-400 group-hover:text-blue-100 font-medium">4 dias</span>
-              <span className="font-extrabold text-base">Easy</span>
-              <span className="text-[10px] opacity-60">Tecla 4</span>
+              <span className="text-[10px] sm:text-xs text-blue-300 font-medium">4 dias</span>
+              <span className="font-black text-xs sm:text-base">Easy</span>
             </button>
           </motion.div>
         ) : (
@@ -257,9 +253,9 @@ export default function FlashcardDeck({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onClick={() => setIsFlipped(true)}
-            className="w-full py-4.5 rounded-2xl bg-[#0071e3] hover:bg-[#005bb5] text-white font-extrabold text-base shadow-xl shadow-[#0071e3]/30 transition active:scale-[0.99] flex items-center justify-center gap-2"
+            className="w-full py-4 rounded-2xl bg-[#0071e3] hover:bg-[#005bb5] text-white font-extrabold text-sm sm:text-base shadow-xl shadow-[#0071e3]/30 transition active:scale-[0.98] touch-manipulation flex items-center justify-center gap-2 min-h-[52px]"
           >
-            <Sparkles size={20} /> Mostrar Resposta
+            <Sparkles size={18} /> Mostrar Resposta
           </motion.button>
         )}
       </AnimatePresence>
