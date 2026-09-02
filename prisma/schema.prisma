@@ -26,6 +26,7 @@ model Card {
   front          String
   back           String
   extra          String?
+  imageUrl       String?
   easeFactor     Float       @default(2.5)
   interval       Int         @default(0)
   repetitions    Int         @default(0)

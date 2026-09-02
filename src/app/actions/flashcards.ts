@@ -111,13 +111,14 @@ export async function getDueCardsForDeck(deckId: string) {
   });
 }
 
-export async function createCard(deckId: string, front: string, back: string, extra?: string) {
+export async function createCard(deckId: string, front: string, back: string, extra?: string, imageUrl?: string) {
   const card = await db.card.create({
     data: {
       deckId,
       front,
       back,
       extra,
+      imageUrl,
       nextReviewDate: new Date(),
     },
   });
@@ -214,6 +215,25 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
     didLevelUp,
     newLevel: newLevelInfo.level,
     newTitle: newLevelInfo.title,
+  };
+}
+
+export async function getRetentionAnalytics() {
+  const logs = await db.reviewLog.findMany({
+    orderBy: { reviewedAt: "asc" },
+  });
+
+  const totalReviews = logs.length;
+  const ratingsCount = { 1: 0, 2: 0, 3: 0, 4: 0 };
+  logs.forEach((l) => {
+    if (l.rating >= 1 && l.rating <= 4) {
+      ratingsCount[l.rating as 1 | 2 | 3 | 4]++;
+    }
+  });
+
+  return {
+    totalReviews,
+    ratingsCount,
   };
 }
 

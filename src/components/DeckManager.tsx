@@ -2,30 +2,33 @@
 
 import { useState } from "react";
 import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
-import { Plus, Sparkles, ArrowRight, Download, Trash2, Zap, Play, Layers, BookOpen, Flame, Trophy, Award, Star } from "lucide-react";
+import { Plus, Sparkles, ArrowRight, Download, Trash2, Zap, Play, Layers, BookOpen, Flame, Trophy, Award, Star, BarChart3, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import AnalyticsModal from "./AnalyticsModal";
 
 export default function DeckManager({ decks, userProfile }: { decks: any[]; userProfile: any }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [icon, setIcon] = useState("⚡");
+  const [icon, setIcon] = useState("?");
 
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
   const [extra, setExtra] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
   const totalDueAll = decks.reduce((acc, d) => acc + d.dueCardsCount, 0);
   const totalCardsAll = decks.reduce((acc, d) => acc + d.totalCards, 0);
 
   const level = userProfile?.level || 1;
   const rankTitle = userProfile?.title || "Iniciante Curioso";
-  const rankBadge = userProfile?.badge || "🌱";
+  const rankBadge = userProfile?.badge || "??";
   const xp = userProfile?.xp || 0;
   const nextLevelXp = userProfile?.nextLevelXp || 100;
   const currentLevelMinXp = userProfile?.currentLevelMinXp || 0;
@@ -50,10 +53,11 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
   const handleCreateCard = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDeckId || !front.trim() || !back.trim()) return;
-    await createCard(selectedDeckId, front, back, extra);
+    await createCard(selectedDeckId, front, back, extra, imageUrl);
     setFront("");
     setBack("");
     setExtra("");
+    setImageUrl("");
     setIsCardModalOpen(false);
   };
 
@@ -67,9 +71,9 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
   return (
     <div className="space-y-6 sm:space-y-10 pb-12">
-      {/* Widget Gamificado de Nível & Constância Avançado (Apple Ring Style) */}
+      {/* Widget Gamificado de N?vel & Const?ncia Avan?ado (Apple Ring Style) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card de Nível, Rank e XP */}
+        {/* Card de N?vel, Rank e XP */}
         <div className="md:col-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-950 p-5 sm:p-6 border border-zinc-800 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -81,7 +85,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               </motion.div>
               <div>
                 <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-[#0071e3] flex items-center gap-1">
-                  <Trophy size={13} className="text-amber-400" /> Nível {level}
+                  <Trophy size={13} className="text-amber-400" /> N?vel {level}
                 </span>
                 <h3 className="text-base sm:text-xl font-extrabold text-white flex items-center gap-1.5">
                   {rankTitle}
@@ -100,7 +104,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           {/* Barra de XP Animada */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-[11px] sm:text-xs font-semibold text-zinc-400">
-              <span>Progresso para o Nível {level + 1}</span>
+              <span>Progresso para o N?vel {level + 1}</span>
               <span>{levelProgress}% ({xpInCurrentLevel} / {xpNeededForLevel} XP)</span>
             </div>
             <div className="w-full h-3 bg-zinc-800/80 rounded-full overflow-hidden p-0.5 border border-zinc-700/50 shadow-inner">
@@ -114,22 +118,28 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           </div>
         </div>
 
-        {/* Card de Constância (Streak 🔥) */}
+        {/* Card de Const?ncia (Streak ??) + Bot?o de Desempenho */}
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 p-5 sm:p-6 border border-amber-500/20 shadow-xl flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-400 flex items-center gap-1">
-              <Flame size={14} /> Constância Diária
+              <Flame size={14} /> Const?ncia Di?ria
             </span>
-            <Award size={20} className="text-amber-400" />
+            <button
+              onClick={() => setIsAnalyticsOpen(true)}
+              className="p-2 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 rounded-xl transition text-xs font-bold flex items-center gap-1"
+              title="Ver Desempenho & Estat?sticas"
+            >
+              <BarChart3 size={14} /> Stats
+            </button>
           </div>
 
           <div className="my-2">
             <div className="text-3xl sm:text-4xl font-black text-white flex items-baseline gap-2">
               <span>{streak}</span>
-              <span className="text-xs sm:text-sm font-bold text-amber-400">Dias Seguidos 🔥</span>
+              <span className="text-xs sm:text-sm font-bold text-amber-400">Dias Seguidos ??</span>
             </div>
             <p className="text-[11px] sm:text-xs text-zinc-400 mt-1">
-              Estude diariamente para não perder seu rastro de aprendizagem!
+              Estude diariamente para n?o perder seu rastro de aprendizagem!
             </p>
           </div>
         </div>
@@ -152,7 +162,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
             </h1>
 
             <p className="text-blue-100/80 text-xs sm:text-base font-normal leading-relaxed">
-              Sincroniza🌱o em tempo real no Neon DB. Revise baralhos individuais ou estude <span className="font-semibold text-white">todos os cards pendentes</span>.
+              Sincroniza??o em tempo real no Neon DB. Revise baralhos individuais ou estude <span className="font-semibold text-white">todos os cards pendentes</span>.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-1 sm:pt-2 text-[11px] sm:text-xs font-semibold text-blue-200">
@@ -229,7 +239,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   {deck.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed">
-                  {deck.description || "Sem descrição disponível."}
+                  {deck.description || "Sem descri??o dispon?vel."}
                 </p>
 
                 <div className="flex items-center gap-3 mt-4 text-[11px] sm:text-xs text-zinc-400 font-semibold">
@@ -237,7 +247,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     {deck.totalCards} cards
                   </span>
-                  <span>•</span>
+                  <span>?</span>
                   <span className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     {deck.newCardsCount} novos
@@ -245,7 +255,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 </div>
               </div>
 
-              {/* Botões Otimizados para Toque */}
+              {/* Bot?es Otimizados para Toque */}
               <div className="flex items-center gap-2 mt-6 pt-4 border-t border-zinc-800/60">
                 <Link
                   href={`/study/${deck.id}`}
@@ -255,7 +265,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 </Link>
 
                 <a
-                  href={`/api/export-apkg⚡deckId=${deck.id}`}
+                  href={`/api/export-apkg?deckId=${deck.id}`}
                   download
                   className="p-3 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white rounded-xl transition border border-emerald-500/20 flex items-center justify-center min-h-[44px] min-w-[44px]"
                   title="Exportar .APKG para Anki"
@@ -290,7 +300,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
             <h2 className="text-xl font-bold text-white mb-5">Criar Novo Baralho</h2>
             <form onSubmit={handleCreateDeck} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">⚡cone Emoji</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">?cone Emoji</label>
                 <input
                   type="text"
                   value={icon}
@@ -299,7 +309,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Título do Baralho</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">T?tulo do Baralho</label>
                 <input
                   type="text"
                   required
@@ -310,11 +320,11 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Descri🌱o (Opcional)</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Descri??o (Opcional)</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Breve resumo do conte⚡do deste deck"
+                  placeholder="Breve resumo do conte?do deste deck"
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
@@ -339,7 +349,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
         </div>
       )}
 
-      {/* Modal Criar Card */}
+      {/* Modal Criar Card com Suporte a Imagem e Rich Text */}
       {isCardModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <motion.div
@@ -347,36 +357,48 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
             animate={{ scale: 1, opacity: 1 }}
             className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-md w-full shadow-2xl"
           >
-            <h2 className="text-xl font-bold text-white mb-5">Adicionar Card ao Baralho</h2>
+            <h2 className="text-xl font-bold text-white mb-5">Adicionar Card (Markdown & Imagem)</h2>
             <form onSubmit={handleCreateCard} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Frente (Pergunta/Termo)</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Frente (Pergunta/Termo - Suporta Markdown)</label>
                 <input
                   type="text"
                   required
                   value={front}
                   onChange={(e) => setFront(e.target.value)}
-                  placeholder="Ex: Qual ⚡ a fun🌱o da Mitoc⚡ndria⚡"
+                  placeholder="Ex: Qual a f?rmula da **?gua**?"
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Verso (Resposta)</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Verso (Resposta - Suporta Markdown)</label>
                 <textarea
                   required
                   value={back}
                   onChange={(e) => setBack(e.target.value)}
-                  placeholder="Ex: Produ🌱o de ATP atrav⚡s da respira🌱o celular."
+                  placeholder="Ex: H?O - Composta por **2 Hidrog?nios** e 1 Oxig?nio."
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Informa🌱o Extra (Opcional)</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">URL da Imagem / Diagrama (Opcional)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://exemplo.com/diagrama.jpg"
+                    className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none text-xs"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Informa??o Extra (Opcional)</label>
                 <input
                   type="text"
                   value={extra}
                   onChange={(e) => setExtra(e.target.value)}
-                  placeholder="Ex: Conhecida como a usina de energia da c⚡lula."
+                  placeholder="Ex: Dica ou explica??o detalhada"
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
@@ -400,6 +422,9 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           </motion.div>
         </div>
       )}
+
+      {/* Modal de Estat?sticas */}
+      <AnalyticsModal isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} />
     </div>
   );
 }

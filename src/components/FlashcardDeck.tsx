@@ -3,15 +3,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { submitCardReview } from "@/app/actions/flashcards";
-import { Sparkles, CheckCircle2, RotateCcw, Flame, Zap, ArrowLeft, Layers, Trophy, Star } from "lucide-react";
+import { Sparkles, CheckCircle2, Flame, Zap, ArrowLeft, Layers, Trophy, Star, Image as ImageIcon } from "lucide-react";
 import confetti from "canvas-confetti";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Card {
   id: string;
   front: string;
   back: string;
   extra?: string | null;
+  imageUrl?: string | null;
   easeFactor: number;
   interval: number;
   deck?: {
@@ -35,8 +38,7 @@ export default function FlashcardDeck({
   const [isSyncing, setIsSyncing] = useState(false);
   const [streak, setStreak] = useState(1);
   const [completedCount, setCompletedCount] = useState(0);
-  
-  // Feedback visual de XP e Level Up
+
   const [floatingXp, setFloatingXp] = useState<number | null>(null);
   const [levelUpModal, setLevelUpModal] = useState<{ level: number; title: string } | null>(null);
 
@@ -77,14 +79,12 @@ export default function FlashcardDeck({
 
     try {
       const res = await submitCardReview(currentCard.id, rating);
-      
-      // Efeito de XP flutuante
+
       if (res?.xpEarned) {
         setFloatingXp(res.xpEarned);
         setTimeout(() => setFloatingXp(null), 1200);
       }
 
-      // Efeito Especial de LEVEL UP ??
       if (res?.didLevelUp) {
         confetti({
           particleCount: 150,
@@ -148,7 +148,6 @@ export default function FlashcardDeck({
 
   return (
     <div className="max-w-xl mx-auto px-4 py-4 sm:py-8 flex flex-col items-center relative">
-      {/* Pop-up Flutuante de Ganho de XP */}
       <AnimatePresence>
         {floatingXp !== null && (
           <motion.div
@@ -162,7 +161,6 @@ export default function FlashcardDeck({
         )}
       </AnimatePresence>
 
-      {/* Modal de LEVEL UP */}
       <AnimatePresence>
         {levelUpModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
@@ -178,7 +176,7 @@ export default function FlashcardDeck({
               <span className="text-xs uppercase font-extrabold tracking-widest text-amber-400">Novo N?vel Alcan?ado!</span>
               <h2 className="text-3xl font-black text-white mt-1 mb-2">N?vel {levelUpModal.level}</h2>
               <p className="text-lg font-bold text-cyan-400 mb-6">{levelUpModal.title}</p>
-              
+
               <button
                 onClick={() => setLevelUpModal(null)}
                 className="w-full py-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-zinc-950 font-black rounded-2xl shadow-lg active:scale-95 transition"
@@ -223,9 +221,9 @@ export default function FlashcardDeck({
         />
       </div>
 
-      {/* Container do Card Otimizado com Anima??es 3D Refinadas */}
+      {/* Container do Card Otimizado com Suporte a Imagem e Markdown */}
       <div
-        className="w-full min-h-[300px] sm:min-h-[360px] cursor-pointer select-none mb-6 touch-manipulation perspective-1000"
+        className="w-full min-h-[320px] sm:min-h-[380px] cursor-pointer select-none mb-6 touch-manipulation perspective-1000"
         onClick={() => setIsFlipped((prev) => !prev)}
       >
         <motion.div
@@ -233,34 +231,41 @@ export default function FlashcardDeck({
           initial={{ scale: 0.95, opacity: 0, y: 15 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
-          className="w-full h-full rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 bg-gradient-to-b from-zinc-900/95 to-zinc-950/95 backdrop-blur-3xl border border-zinc-800 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center text-center transition-all duration-200 active:scale-[0.99]"
+          className="w-full h-full rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 bg-gradient-to-b from-zinc-900/95 to-zinc-950/95 backdrop-blur-3xl border border-zinc-800 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center text-center transition-all duration-200 active:scale-[0.99]"
         >
+          {/* Imagem do Card se houver */}
+          {currentCard.imageUrl && (
+            <div className="mb-4 max-h-40 rounded-xl overflow-hidden border border-zinc-800 shadow-md">
+              <img src={currentCard.imageUrl} alt="Anexo do card" className="h-full w-auto object-cover max-h-40" />
+            </div>
+          )}
+
           {/* LADO FRENTE (PERGUNTA) */}
           {!isFlipped ? (
-            <div className="flex flex-col items-center justify-center py-4 w-full">
-              <span className="text-[10px] sm:text-xs uppercase tracking-widest font-extrabold text-[#0071e3] bg-[#0071e3]/10 px-3 py-1 rounded-full mb-4 sm:mb-6 border border-[#0071e3]/20">
+            <div className="flex flex-col items-center justify-center py-2 w-full">
+              <span className="text-[10px] sm:text-xs uppercase tracking-widest font-extrabold text-[#0071e3] bg-[#0071e3]/10 px-3 py-1 rounded-full mb-4 border border-[#0071e3]/20">
                 Pergunta / Termo
               </span>
-              <h3 className="text-2xl sm:text-4xl font-extrabold text-white leading-snug break-words max-w-full">
-                {currentCard.front}
-              </h3>
-              <p className="text-[11px] sm:text-xs text-zinc-400 mt-8 sm:mt-10 flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-zinc-700/50">
+              <div className="text-xl sm:text-3xl font-extrabold text-white leading-snug break-words max-w-full prose prose-invert">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.front}</ReactMarkdown>
+              </div>
+              <p className="text-[11px] sm:text-xs text-zinc-400 mt-6 flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-zinc-700/50">
                 Toque no card para virar ??
               </p>
             </div>
           ) : (
             /* LADO VERSO (RESPOSTA) */
             <div className="flex flex-col items-center justify-center py-2 w-full animate-in fade-in duration-200">
-              <span className="text-[10px] sm:text-xs uppercase tracking-widest font-extrabold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full mb-3 sm:mb-4 border border-emerald-500/20">
+              <span className="text-[10px] sm:text-xs uppercase tracking-widest font-extrabold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full mb-3 border border-emerald-500/20">
                 Resposta
               </span>
-              <h3 className="text-xl sm:text-3xl font-bold text-white leading-relaxed mb-3 sm:mb-4 break-words max-w-full">
-                {currentCard.back}
-              </h3>
+              <div className="text-lg sm:text-2xl font-bold text-white leading-relaxed mb-3 break-words max-w-full prose prose-invert">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.back}</ReactMarkdown>
+              </div>
               {currentCard.extra && (
-                <p className="text-xs sm:text-sm text-zinc-300 italic bg-zinc-800/80 p-3 sm:p-4 rounded-2xl border border-zinc-700/50 max-w-md">
-                  {currentCard.extra}
-                </p>
+                <div className="text-xs sm:text-sm text-zinc-300 italic bg-zinc-800/80 p-3 rounded-2xl border border-zinc-700/50 max-w-md w-full">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.extra}</ReactMarkdown>
+                </div>
               )}
             </div>
           )}
