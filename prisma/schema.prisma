@@ -1,7 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// This is your Prisma schema file
 
 generator client {
   provider = "prisma-client-js"
@@ -15,7 +12,7 @@ model Deck {
   id          String   @id @default(uuid())
   title       String
   description String?
-  icon        String   @default("⚡")
+  icon        String   @default("?")
   color       String   @default("#0071e3")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -33,7 +30,7 @@ model Card {
   interval       Int         @default(0)
   repetitions    Int         @default(0)
   lapses         Int         @default(0)
-  status         String      @default("NEW") // NEW, LEARNING, REVIEW, RELEARNING
+  status         String      @default("NEW")
   nextReviewDate DateTime    @default(now())
   lastReviewedAt DateTime?
   createdAt      DateTime    @default(now())
@@ -45,8 +42,16 @@ model ReviewLog {
   id         String   @id @default(uuid())
   cardId     String
   card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  rating     Int      // 1: Again, 2: Hard, 3: Good, 4: Easy
+  rating     Int
   timeMs     Int      @default(0)
   reviewedAt DateTime @default(now())
 }
 
+model UserProfile {
+  id             String    @id @default("default_user")
+  xp             Int       @default(0)
+  level          Int       @default(1)
+  streak         Int       @default(0)
+  lastReviewedAt DateTime?
+  updatedAt      DateTime  @updatedAt
+}

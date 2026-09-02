@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
-import { Plus, Sparkles, ArrowRight, Download, Trash2, Zap, Play, Layers, BookOpen } from "lucide-react";
+import { Plus, Sparkles, ArrowRight, Download, Trash2, Zap, Play, Layers, BookOpen, Flame, Trophy, Award, Star } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function DeckManager({ decks }: { decks: any[] }) {
+export default function DeckManager({ decks, userProfile }: { decks: any[]; userProfile: any }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [icon, setIcon] = useState("⚡");
+  const [icon, setIcon] = useState("?");
 
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
@@ -22,6 +22,18 @@ export default function DeckManager({ decks }: { decks: any[] }) {
 
   const totalDueAll = decks.reduce((acc, d) => acc + d.dueCardsCount, 0);
   const totalCardsAll = decks.reduce((acc, d) => acc + d.totalCards, 0);
+
+  const level = userProfile?.level || 1;
+  const xp = userProfile?.xp || 0;
+  const nextLevelXp = userProfile?.nextLevelXp || 100;
+  const streak = userProfile?.streak || 1;
+
+  // C?lculo da porcentagem do progresso at? o pr?ximo N?vel
+  const xpCurrentLevel = (level - 1) * 100 + (level - 2) * 50;
+  const levelProgress = Math.min(
+    100,
+    Math.max(0, Math.round(((xp - (level === 1 ? 0 : 100)) / (nextLevelXp - (level === 1 ? 0 : 100))) * 100))
+  );
 
   const handleCreateDeck = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +64,71 @@ export default function DeckManager({ decks }: { decks: any[] }) {
 
   return (
     <div className="space-y-6 sm:space-y-10 pb-12">
+      {/* Widget Gamificado de N?vel & Const?ncia (Apple Activity Style) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card de N?vel e XP */}
+        <div className="md:col-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-950 p-6 border border-zinc-800 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0071e3] to-cyan-400 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-[#0071e3]/30">
+                {level}
+              </div>
+              <div>
+                <span className="text-xs font-extrabold uppercase tracking-widest text-[#0071e3]">
+                  N?vel de Reten??o
+                </span>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  Mestre Anki N?vel {level} <Trophy size={18} className="text-amber-400" />
+                </h3>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="text-xs text-zinc-400 font-semibold block">XP Total</span>
+              <span className="text-lg font-black text-cyan-400 flex items-center justify-end gap-1">
+                <Star size={16} className="fill-current" /> {xp} XP
+              </span>
+            </div>
+          </div>
+
+          {/* Barra de XP */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs font-semibold text-zinc-400">
+              <span>Progresso para N?vel {level + 1}</span>
+              <span>{levelProgress}% ({xp} / {nextLevelXp} XP)</span>
+            </div>
+            <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden p-0.5 border border-zinc-700/50">
+              <motion.div
+                className="h-full bg-gradient-to-r from-[#0071e3] via-cyan-400 to-emerald-400 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${levelProgress}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Card de Const?ncia (Streak) */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 p-6 border border-amber-500/20 shadow-xl flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-amber-400 flex items-center gap-1">
+              <Flame size={14} /> Const?ncia Di?ria
+            </span>
+            <Award size={20} className="text-amber-400" />
+          </div>
+
+          <div className="my-2">
+            <div className="text-4xl font-black text-white flex items-baseline gap-2">
+              <span>{streak}</span>
+              <span className="text-sm font-bold text-amber-400">Dias Seguidos ??</span>
+            </div>
+            <p className="text-xs text-zinc-400 mt-1">
+              Pratique diariamente para manter sua const?ncia de aprendizado ativa!
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Super Banner Apple Ultra Glossy - Responsivo Mobile */}
       <div className="relative overflow-hidden rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 p-6 sm:p-10 text-white shadow-[0_20px_50px_-15px_rgba(0,113,227,0.4)] border border-white/20 backdrop-blur-3xl">
         <div className="absolute -top-24 -right-24 w-72 sm:w-96 h-72 sm:h-96 bg-cyan-400/20 rounded-full blur-[80px] pointer-events-none" />
@@ -69,7 +146,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
             </h1>
 
             <p className="text-blue-100/80 text-xs sm:text-base font-normal leading-relaxed">
-              Sincronização em tempo real no Neon DB. Revise baralhos individuais ou estude <span className="font-semibold text-white">todos os cards pendentes</span>.
+              Sincroniza??o em tempo real no Neon DB. Revise baralhos individuais ou estude <span className="font-semibold text-white">todos os cards pendentes</span>.
             </p>
 
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-1 sm:pt-2 text-[11px] sm:text-xs font-semibold text-blue-200">
@@ -89,7 +166,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-2 sm:pt-0">
-            {/* Botão GLOBAL: Estudar TODOS os baralhos pendentes */}
+            {/* Bot?o GLOBAL: Estudar TODOS os baralhos pendentes */}
             <Link
               href="/study/all"
               className="w-full sm:w-auto py-3.5 sm:py-4 px-5 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-zinc-950 font-extrabold rounded-2xl shadow-lg shadow-emerald-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm"
@@ -146,7 +223,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
                   {deck.title}
                 </h3>
                 <p className="text-xs sm:text-sm text-zinc-400 mt-1.5 line-clamp-2 leading-relaxed">
-                  {deck.description || "Sem descrição disponível."}
+                  {deck.description || "Sem descri??o dispon?vel."}
                 </p>
 
                 <div className="flex items-center gap-3 mt-4 text-[11px] sm:text-xs text-zinc-400 font-semibold">
@@ -154,7 +231,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                     {deck.totalCards} cards
                   </span>
-                  <span>•</span>
+                  <span>?</span>
                   <span className="flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     {deck.newCardsCount} novos
@@ -162,7 +239,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
                 </div>
               </div>
 
-              {/* Botões Otimizados para Toque */}
+              {/* Bot?es Otimizados para Toque */}
               <div className="flex items-center gap-2 mt-6 pt-4 border-t border-zinc-800/60">
                 <Link
                   href={`/study/${deck.id}`}
@@ -196,7 +273,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
         </AnimatePresence>
       </div>
 
-      {/* Modal Criar Deck - Fullscreen Mobile Friendly */}
+      {/* Modal Criar Deck */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <motion.div
@@ -207,7 +284,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
             <h2 className="text-xl font-bold text-white mb-5">Criar Novo Baralho</h2>
             <form onSubmit={handleCreateDeck} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Ícone Emoji</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">?cone Emoji</label>
                 <input
                   type="text"
                   value={icon}
@@ -216,7 +293,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Título do Baralho</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">T?tulo do Baralho</label>
                 <input
                   type="text"
                   required
@@ -227,11 +304,11 @@ export default function DeckManager({ decks }: { decks: any[] }) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Descrição (Opcional)</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Descri??o (Opcional)</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Breve resumo do conteúdo deste deck"
+                  placeholder="Breve resumo do conte?do deste deck"
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
@@ -273,7 +350,7 @@ export default function DeckManager({ decks }: { decks: any[] }) {
                   required
                   value={front}
                   onChange={(e) => setFront(e.target.value)}
-                  placeholder="Ex: Qual é a função da Mitocôndria?"
+                  placeholder="Ex: Qual ? a fun??o da Mitoc?ndria?"
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
@@ -283,17 +360,17 @@ export default function DeckManager({ decks }: { decks: any[] }) {
                   required
                   value={back}
                   onChange={(e) => setBack(e.target.value)}
-                  placeholder="Ex: Produção de ATP através da respiração celular."
+                  placeholder="Ex: Produ??o de ATP atrav?s da respira??o celular."
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1">Informação Extra (Opcional)</label>
+                <label className="block text-xs font-bold text-zinc-400 mb-1">Informa??o Extra (Opcional)</label>
                 <input
                   type="text"
                   value={extra}
                   onChange={(e) => setExtra(e.target.value)}
-                  placeholder="Ex: Conhecida como a usina de energia da célula."
+                  placeholder="Ex: Conhecida como a usina de energia da c?lula."
                   className="w-full p-3 rounded-xl border border-zinc-800 bg-zinc-800/60 text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none"
                 />
               </div>

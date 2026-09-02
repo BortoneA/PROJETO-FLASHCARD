@@ -1,8 +1,33 @@
-﻿"use server";
+"use server";
 
 import { db } from "@/lib/db";
 import { calculateAnkiSM2, Rating } from "@/lib/anki";
 import { revalidatePath } from "next/cache";
+
+export async function getUserProfile() {
+  let profile = await db.userProfile.findUnique({
+    where: { id: "default_user" },
+  });
+
+  if (!profile) {
+    profile = await db.userProfile.create({
+      data: {
+        id: "default_user",
+        xp: 0,
+        level: 1,
+        streak: 1,
+      },
+    });
+  }
+
+  // XP para o pr?ximo n?vel (Ex: N?vel 1 -> 100 XP, N?vel 2 -> 250 XP...)
+  const nextLevelXp = profile.level * 100 + (profile.level - 1) * 50;
+
+  return {
+    ...profile,
+    nextLevelXp,
+  };
+}
 
 export async function getDecks() {
   const decks = await db.deck.findMany({
@@ -15,7 +40,6 @@ export async function getDecks() {
   const now = new Date();
 
   return decks.map((deck) => {
-    // Aponta estritamente para cards cuja data de revisão seja anterior ou igual a AGORA
     const dueCards = deck.cards.filter(
       (c) => new Date(c.nextReviewDate) <= now
     );
@@ -35,7 +59,7 @@ export async function createDeck(title: string, description?: string, icon?: str
     data: {
       title,
       description,
-      icon: icon || "⚡",
+      icon: icon || "?",
       color: color || "#0071e3",
     },
   });
@@ -48,10 +72,6 @@ export async function deleteDeck(id: string) {
   revalidatePath("/");
 }
 
-/**
- * Retorna ESTRITAMENTE os cards que estão vencidos/devidos para a data de hoje.
- * Se o card já foi assimilado/respondido com sucesso, ele NÃO retornará até a sua próxima data agendada (nextReviewDate).
- */
 export async function getDueCardsForDeck(deckId: string) {
   const now = new Date();
 
@@ -94,7 +114,6 @@ export async function createCard(deckId: string, front: string, back: string, ex
       front,
       back,
       extra,
-      // Card novo é disponibilizado imediatamente
       nextReviewDate: new Date(),
     },
   });
@@ -105,7 +124,7 @@ export async function createCard(deckId: string, front: string, back: string, ex
 
 export async function submitCardReview(cardId: string, rating: Rating, timeMs: number = 0) {
   const card = await db.card.findUnique({ where: { id: cardId } });
-  if (!card) throw new Error("Card não encontrado");
+  if (!card) throw new Error("Card n?o encontrado");
 
   const newStats = calculateAnkiSM2(
     {
@@ -119,7 +138,44 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
     rating
   );
 
-  const [updatedCard] = await db.$transaction([
+  // Ganhos de XP por acerto:
+  // Easy (4) = 25 XP, Good (3) = 15 XP, Hard (2) = 10 XP, Again (1) = 5 XP (XP de consola??o)
+  const xpEarnedMap: Record<Rating, number> = { 4: 25, 3: 15, 2: 10, 1: 5 };
+  const xpEarned = xpEarnedMap[rating];
+
+  // Atualiza perfil do usu?rio
+  let profile = await db.userProfile.findUnique({ where: { id: "default_user" } });
+  if (!profile) {
+    profile = await db.userProfile.create({
+      data: { id: "default_user", xp: 0, level: 1, streak: 1 },
+    });
+  }
+
+  const newXp = profile.xp + xpEarned;
+  let newLevel = profile.level;
+  let nextLevelXp = newLevel * 100 + (newLevel - 1) * 50;
+
+  // Level Up Check
+  if (newXp >= nextLevelXp) {
+    newLevel += 1;
+  }
+
+  // Atualiza Const?ncia (Streak)
+  const now = new Date();
+  let newStreak = profile.streak;
+  if (profile.lastReviewedAt) {
+    const lastDate = new Date(profile.lastReviewedAt);
+    const diffHours = (now.getTime() - lastDate.getTime()) / (1000 * 3600);
+    if (diffHours >= 24 && diffHours < 48) {
+      newStreak += 1;
+    } else if (diffHours >= 48) {
+      newStreak = 1; // Perdeu o streak por inatividade
+    }
+  } else {
+    newStreak = 1;
+  }
+
+  const [updatedCard, updatedProfile] = await db.$transaction([
     db.card.update({
       where: { id: cardId },
       data: {
@@ -129,7 +185,16 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
         lapses: newStats.lapses,
         status: newStats.status,
         nextReviewDate: newStats.nextReviewDate,
-        lastReviewedAt: new Date(),
+        lastReviewedAt: now,
+      },
+    }),
+    db.userProfile.update({
+      where: { id: "default_user" },
+      data: {
+        xp: newXp,
+        level: newLevel,
+        streak: newStreak,
+        lastReviewedAt: now,
       },
     }),
     db.reviewLog.create({
@@ -144,7 +209,7 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
   revalidatePath(`/study/${card.deckId}`);
   revalidatePath(`/study/all`);
   revalidatePath("/");
-  return updatedCard;
+  return { card: updatedCard, profile: updatedProfile, xpEarned };
 }
 
 export async function seedDemoDeckIfEmpty() {
@@ -153,9 +218,9 @@ export async function seedDemoDeckIfEmpty() {
 
   await db.deck.create({
     data: {
-      title: "Inglês Avançado & Vocabulário Apple",
-      description: "Aprenda termos em inglês e conceitos de design com o algoritmo Anki SM-2 em tempo real.",
-      icon: "🍎",
+      title: "Ingl?s Avan?ado & Vocabul?rio Apple",
+      description: "Aprenda termos em ingl?s e conceitos de design com o algoritmo Anki SM-2 em tempo real.",
+      icon: "??",
       color: "#0071e3",
       cards: {
         create: [
@@ -166,17 +231,17 @@ export async function seedDemoDeckIfEmpty() {
           },
           {
             front: "Glassmorphism",
-            back: "Estilo de UI com efeito de vidro fosco, focado em profundidade, transparência e desfoque.",
+            back: "Estilo de UI com efeito de vidro fosco, focado em profundidade, transpar?ncia e desfoque.",
             extra: "Largamente utilizado no macOS, iOS e visionOS.",
           },
           {
             front: "What is Spaced Repetition?",
-            back: "Técnica de aprendizado que revisa a informação em intervalos crescentes para maximizar a retenção na memória de longo prazo.",
+            back: "T?cnica de aprendizado que revisa a informa??o em intervalos crescentes para maximizar a reten??o na mem?ria de longo prazo.",
             extra: "Base do algoritmo do Anki.",
           },
           {
             front: "Ephemeral",
-            back: "Que dura muito pouco tempo; efêmero, passageiro.",
+            back: "Que dura muito pouco tempo; ef?mero, passageiro.",
             extra: "Exemplo: The ephemeral beauty of cherry blossoms.",
           },
         ],
