@@ -49,6 +49,37 @@ export async function deleteDeck(id: string) {
 
 export async function getDueCardsForDeck(deckId: string) {
   const now = new Date();
+
+  if (deckId === "all") {
+    // Busca cards atrasados/devidos de TODOS os baralhos
+    const cards = await db.card.findMany({
+      where: {
+        nextReviewDate: {
+          lte: now,
+        },
+      },
+      include: {
+        deck: true,
+      },
+      orderBy: {
+        nextReviewDate: "asc",
+      },
+    });
+
+    if (cards.length === 0) {
+      // Se não houver nenhum devido em nenhum baralho, traz os 30 cards mais novos de todos os baralhos
+      return await db.card.findMany({
+        include: {
+          deck: true,
+        },
+        orderBy: { createdAt: "asc" },
+        take: 30,
+      });
+    }
+
+    return cards;
+  }
+
   const cards = await db.card.findMany({
     where: {
       deckId,
@@ -56,15 +87,21 @@ export async function getDueCardsForDeck(deckId: string) {
         lte: now,
       },
     },
+    include: {
+      deck: true,
+    },
     orderBy: {
       nextReviewDate: "asc",
     },
   });
 
   if (cards.length === 0) {
-    // Se não tiver nenhum atrasado/devido, traz também os cards NOVOS
+    // Se não tiver nenhum atrasado/devido, traz também os cards NOVOS do deck específico
     return await db.card.findMany({
       where: { deckId },
+      include: {
+        deck: true,
+      },
       orderBy: { createdAt: "asc" },
       take: 20,
     });
@@ -83,6 +120,7 @@ export async function createCard(deckId: string, front: string, back: string, ex
     },
   });
   revalidatePath(`/study/${deckId}`);
+  revalidatePath("/");
   return card;
 }
 
@@ -125,6 +163,8 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
   ]);
 
   revalidatePath(`/study/${card.deckId}`);
+  revalidatePath(`/study/all`);
+  revalidatePath("/");
   return updatedCard;
 }
 
@@ -132,7 +172,7 @@ export async function seedDemoDeckIfEmpty() {
   const count = await db.deck.count();
   if (count > 0) return;
 
-  const deck = await db.deck.create({
+  await db.deck.create({
     data: {
       title: "Inglês Avançado & Vocabulário Apple",
       description: "Aprenda termos em inglês e conceitos de design com o algoritmo Anki SM-2 em tempo real.",
@@ -164,6 +204,4 @@ export async function seedDemoDeckIfEmpty() {
       },
     },
   });
-
-  return deck;
 }
