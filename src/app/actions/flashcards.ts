@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { calculateAnkiSM2, Rating } from "@/lib/anki";
+import { getLevelDetails } from "@/lib/gamification";
 import { revalidatePath } from "next/cache";
 
 export async function getUserProfile() {
@@ -20,12 +21,15 @@ export async function getUserProfile() {
     });
   }
 
-  // XP para o pr?ximo n?vel (Ex: N?vel 1 -> 100 XP, N?vel 2 -> 250 XP...)
-  const nextLevelXp = profile.level * 100 + (profile.level - 1) * 50;
+  const levelInfo = getLevelDetails(profile.xp);
 
   return {
     ...profile,
-    nextLevelXp,
+    level: levelInfo.level,
+    title: levelInfo.title,
+    badge: levelInfo.badge,
+    nextLevelXp: levelInfo.nextLevelXp,
+    currentLevelMinXp: levelInfo.currentLevelMinXp,
   };
 }
 
@@ -138,12 +142,10 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
     rating
   );
 
-  // Ganhos de XP por acerto:
-  // Easy (4) = 25 XP, Good (3) = 15 XP, Hard (2) = 10 XP, Again (1) = 5 XP (XP de consola??o)
-  const xpEarnedMap: Record<Rating, number> = { 4: 25, 3: 15, 2: 10, 1: 5 };
+  // Ganhos de XP: Easy = 30 XP, Good = 20 XP, Hard = 12 XP, Again = 5 XP
+  const xpEarnedMap: Record<Rating, number> = { 4: 30, 3: 20, 2: 12, 1: 5 };
   const xpEarned = xpEarnedMap[rating];
 
-  // Atualiza perfil do usu?rio
   let profile = await db.userProfile.findUnique({ where: { id: "default_user" } });
   if (!profile) {
     profile = await db.userProfile.create({
@@ -151,14 +153,10 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
     });
   }
 
+  const oldLevelInfo = getLevelDetails(profile.xp);
   const newXp = profile.xp + xpEarned;
-  let newLevel = profile.level;
-  let nextLevelXp = newLevel * 100 + (newLevel - 1) * 50;
-
-  // Level Up Check
-  if (newXp >= nextLevelXp) {
-    newLevel += 1;
-  }
+  const newLevelInfo = getLevelDetails(newXp);
+  const didLevelUp = newLevelInfo.level > oldLevelInfo.level;
 
   // Atualiza Const?ncia (Streak)
   const now = new Date();
@@ -169,7 +167,7 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
     if (diffHours >= 24 && diffHours < 48) {
       newStreak += 1;
     } else if (diffHours >= 48) {
-      newStreak = 1; // Perdeu o streak por inatividade
+      newStreak = 1;
     }
   } else {
     newStreak = 1;
@@ -192,7 +190,7 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
       where: { id: "default_user" },
       data: {
         xp: newXp,
-        level: newLevel,
+        level: newLevelInfo.level,
         streak: newStreak,
         lastReviewedAt: now,
       },
@@ -209,7 +207,14 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
   revalidatePath(`/study/${card.deckId}`);
   revalidatePath(`/study/all`);
   revalidatePath("/");
-  return { card: updatedCard, profile: updatedProfile, xpEarned };
+  return {
+    card: updatedCard,
+    profile: updatedProfile,
+    xpEarned,
+    didLevelUp,
+    newLevel: newLevelInfo.level,
+    newTitle: newLevelInfo.title,
+  };
 }
 
 export async function seedDemoDeckIfEmpty() {
