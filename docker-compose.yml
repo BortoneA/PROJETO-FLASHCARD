@@ -1,0 +1,13 @@
+﻿version: '3.8'
+
+services:
+  anki-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://neondb_owner:npg_FY3IMCoJVfX4@ep-purple-mode-axmiciw3-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require
