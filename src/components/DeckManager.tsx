@@ -28,8 +28,6 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
   const nextLevelXp = userProfile?.nextLevelXp || 100;
   const streak = userProfile?.streak || 1;
 
-  // C?lculo da porcentagem do progresso at? o pr?ximo N?vel
-  const xpCurrentLevel = (level - 1) * 100 + (level - 2) * 50;
   const levelProgress = Math.min(
     100,
     Math.max(0, Math.round(((xp - (level === 1 ? 0 : 100)) / (nextLevelXp - (level === 1 ? 0 : 100))) * 100))
@@ -64,40 +62,40 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
   return (
     <div className="space-y-6 sm:space-y-10 pb-12">
-      {/* Widget Gamificado de N?vel & Const?ncia (Apple Activity Style) */}
+      {/* Widget Gamificado de N?vel & Const?ncia (Apple Activity Style) - Mobile Responsivo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card de N?vel e XP */}
-        <div className="md:col-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-950 p-6 border border-zinc-800 shadow-xl">
+        <div className="md:col-span-2 relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-zinc-950 p-5 sm:p-6 border border-zinc-800 shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0071e3] to-cyan-400 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-[#0071e3]/30">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-[#0071e3] to-cyan-400 flex items-center justify-center text-white font-black text-lg sm:text-xl shadow-lg shadow-[#0071e3]/30">
                 {level}
               </div>
               <div>
-                <span className="text-xs font-extrabold uppercase tracking-widest text-[#0071e3]">
+                <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-[#0071e3]">
                   N?vel de Reten??o
                 </span>
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  Mestre Anki N?vel {level} <Trophy size={18} className="text-amber-400" />
+                <h3 className="text-base sm:text-xl font-bold text-white flex items-center gap-1.5">
+                  Mestre Anki N?vel {level} <Trophy size={16} className="text-amber-400" />
                 </h3>
               </div>
             </div>
 
             <div className="text-right">
-              <span className="text-xs text-zinc-400 font-semibold block">XP Total</span>
-              <span className="text-lg font-black text-cyan-400 flex items-center justify-end gap-1">
-                <Star size={16} className="fill-current" /> {xp} XP
+              <span className="text-[10px] sm:text-xs text-zinc-400 font-semibold block">XP Total</span>
+              <span className="text-base sm:text-lg font-black text-cyan-400 flex items-center justify-end gap-1">
+                <Star size={14} className="fill-current" /> {xp} XP
               </span>
             </div>
           </div>
 
           {/* Barra de XP */}
           <div className="space-y-1.5">
-            <div className="flex justify-between text-xs font-semibold text-zinc-400">
+            <div className="flex justify-between text-[11px] sm:text-xs font-semibold text-zinc-400">
               <span>Progresso para N?vel {level + 1}</span>
               <span>{levelProgress}% ({xp} / {nextLevelXp} XP)</span>
             </div>
-            <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden p-0.5 border border-zinc-700/50">
+            <div className="w-full h-2.5 sm:h-3 bg-zinc-800 rounded-full overflow-hidden p-0.5 border border-zinc-700/50">
               <motion.div
                 className="h-full bg-gradient-to-r from-[#0071e3] via-cyan-400 to-emerald-400 rounded-full"
                 initial={{ width: 0 }}
@@ -109,20 +107,20 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
         </div>
 
         {/* Card de Const?ncia (Streak) */}
-        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 p-6 border border-amber-500/20 shadow-xl flex flex-col justify-between">
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 p-5 sm:p-6 border border-amber-500/20 shadow-xl flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-widest text-amber-400 flex items-center gap-1">
+            <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-400 flex items-center gap-1">
               <Flame size={14} /> Const?ncia Di?ria
             </span>
-            <Award size={20} className="text-amber-400" />
+            <Award size={18} className="text-amber-400" />
           </div>
 
           <div className="my-2">
-            <div className="text-4xl font-black text-white flex items-baseline gap-2">
+            <div className="text-3xl sm:text-4xl font-black text-white flex items-baseline gap-2">
               <span>{streak}</span>
-              <span className="text-sm font-bold text-amber-400">Dias Seguidos ??</span>
+              <span className="text-xs sm:text-sm font-bold text-amber-400">Dias Seguidos ??</span>
             </div>
-            <p className="text-xs text-zinc-400 mt-1">
+            <p className="text-[11px] sm:text-xs text-zinc-400 mt-1">
               Pratique diariamente para manter sua const?ncia de aprendizado ativa!
             </p>
           </div>
@@ -166,7 +164,6 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-2 sm:pt-0">
-            {/* Bot?o GLOBAL: Estudar TODOS os baralhos pendentes */}
             <Link
               href="/study/all"
               className="w-full sm:w-auto py-3.5 sm:py-4 px-5 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-zinc-950 font-extrabold rounded-2xl shadow-lg shadow-emerald-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm"
