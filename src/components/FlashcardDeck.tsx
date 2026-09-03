@@ -95,7 +95,7 @@ export default function FlashcardDeck({
         setLevelUpModal({ level: res.newLevel, title: res.newTitle });
       }
     } catch (err) {
-      console.error("Erro na sincroniza??o em tempo real:", err);
+      console.error("Erro na sincroniza🔥o em tempo real:", err);
     } finally {
       setIsSyncing(false);
     }
@@ -173,22 +173,22 @@ export default function FlashcardDeck({
               <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-500 text-zinc-950 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-amber-500/20">
                 <Trophy size={44} />
               </div>
-              <span className="text-xs uppercase font-extrabold tracking-widest text-amber-400">Novo N?vel Alcan?ado!</span>
-              <h2 className="text-3xl font-black text-white mt-1 mb-2">N?vel {levelUpModal.level}</h2>
+              <span className="text-xs uppercase font-extrabold tracking-widest text-amber-400">Novo Nível Alcan?ado!</span>
+              <h2 className="text-3xl font-black text-white mt-1 mb-2">Nível {levelUpModal.level}</h2>
               <p className="text-lg font-bold text-cyan-400 mb-6">{levelUpModal.title}</p>
 
               <button
                 onClick={() => setLevelUpModal(null)}
                 className="w-full py-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-zinc-950 font-black rounded-2xl shadow-lg active:scale-95 transition"
               >
-                Continuar Estudando ??
+                Continuar Estudando 🔥
               </button>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Header com Navega??o e Stats */}
+      {/* Header com Navega🔥o e Stats */}
       <div className="w-full flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-6">
         <Link
           href="/"
@@ -250,7 +250,7 @@ export default function FlashcardDeck({
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.front}</ReactMarkdown>
               </div>
               <p className="text-[11px] sm:text-xs text-zinc-400 mt-6 flex items-center gap-1.5 bg-zinc-800/80 px-3 py-1.5 rounded-xl border border-zinc-700/50">
-                Toque no card para virar ??
+                Toque no card para virar 🔥
               </p>
             </div>
           ) : (
@@ -272,7 +272,7 @@ export default function FlashcardDeck({
         </motion.div>
       </div>
 
-      {/* Bot?es de Resposta Anki (SM-2) */}
+      {/* Botões de Resposta Anki (SM-2) */}
       <AnimatePresence>
         {isFlipped ? (
           <motion.div

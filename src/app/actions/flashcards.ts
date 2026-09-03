@@ -159,7 +159,7 @@ export async function submitCardReview(cardId: string, rating: Rating, timeMs: n
   const newLevelInfo = getLevelDetails(newXp);
   const didLevelUp = newLevelInfo.level > oldLevelInfo.level;
 
-  // Atualiza Const?ncia (Streak)
+  // Atualiza Constância (Streak)
   const now = new Date();
   let newStreak = profile.streak;
   if (profile.lastReviewedAt) {
@@ -243,9 +243,9 @@ export async function seedDemoDeckIfEmpty() {
 
   await db.deck.create({
     data: {
-      title: "Ingl?s Avan?ado & Vocabul?rio Apple",
+      title: "Inglês Avançado & Vocabulário Apple",
       description: "Aprenda termos em ingl?s e conceitos de design com o algoritmo Anki SM-2 em tempo real.",
-      icon: "??",
+      icon: "🔥",
       color: "#0071e3",
       cards: {
         create: [
@@ -256,17 +256,17 @@ export async function seedDemoDeckIfEmpty() {
           },
           {
             front: "Glassmorphism",
-            back: "Estilo de UI com efeito de vidro fosco, focado em profundidade, transpar?ncia e desfoque.",
+            back: "Estilo de UI com efeito de vidro fosco, focado em profundidade, transparência e desfoque.",
             extra: "Largamente utilizado no macOS, iOS e visionOS.",
           },
           {
             front: "What is Spaced Repetition?",
-            back: "T?cnica de aprendizado que revisa a informa??o em intervalos crescentes para maximizar a reten??o na mem?ria de longo prazo.",
+            back: "T?cnica de aprendizado que revisa a informa🔥o em intervalos crescentes para maximizar a reten🔥o na memória de longo prazo.",
             extra: "Base do algoritmo do Anki.",
           },
           {
             front: "Ephemeral",
-            back: "Que dura muito pouco tempo; ef?mero, passageiro.",
+            back: "Que dura muito pouco tempo; efêmero, passageiro.",
             extra: "Exemplo: The ephemeral beauty of cherry blossoms.",
           },
         ],
