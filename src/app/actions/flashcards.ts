@@ -63,7 +63,7 @@ export async function createDeck(title: string, description?: string, icon?: str
     data: {
       title,
       description,
-      icon: icon || "?",
+      icon: icon || "\uD83D\uDCDA",
       color: color || "#0071e3",
     },
   });
@@ -129,7 +129,7 @@ export async function createCard(deckId: string, front: string, back: string, ex
 
 export async function submitCardReview(cardId: string, rating: Rating, timeMs: number = 0) {
   const card = await db.card.findUnique({ where: { id: cardId } });
-  if (!card) throw new Error("Card n?o encontrado");
+  if (!card) throw new Error("Card n\u00e3o encontrado");
 
   const newStats = calculateAnkiSM2(
     {
@@ -244,8 +244,8 @@ export async function seedDemoDeckIfEmpty() {
   await db.deck.create({
     data: {
       title: "Inglês Avançado & Vocabulário Apple",
-      description: "Aprenda termos em ingl?s e conceitos de design com o algoritmo Anki SM-2 em tempo real.",
-      icon: "🔥",
+      description: "Aprenda termos em ingl\u00eas e conceitos de design com o algoritmo Anki SM-2 em tempo real.",
+      icon: "\uD83D\uDD25",
       color: "#0071e3",
       cards: {
         create: [
@@ -256,17 +256,17 @@ export async function seedDemoDeckIfEmpty() {
           },
           {
             front: "Glassmorphism",
-            back: "Estilo de UI com efeito de vidro fosco, focado em profundidade, transparência e desfoque.",
+            back: "Estilo de UI com efeito de vidro fosco, focado em profundidade, transpar\u00eancia e desfoque.",
             extra: "Largamente utilizado no macOS, iOS e visionOS.",
           },
           {
             front: "What is Spaced Repetition?",
-            back: "T?cnica de aprendizado que revisa a informa🔥o em intervalos crescentes para maximizar a reten🔥o na memória de longo prazo.",
+            back: "T\u00e9cnica de aprendizado que revisa a informa\u00e7\u00e3o em intervalos crescentes para maximizar a reten\u00e7\u00e3o na mem\u00f3ria de longo prazo.",
             extra: "Base do algoritmo do Anki.",
           },
           {
             front: "Ephemeral",
-            back: "Que dura muito pouco tempo; efêmero, passageiro.",
+            back: "Que dura muito pouco tempo; ef\u00eamero, passageiro.",
             extra: "Exemplo: The ephemeral beauty of cherry blossoms.",
           },
         ],
