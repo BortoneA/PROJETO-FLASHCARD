@@ -20,15 +20,19 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+import { ThemeProvider } from "@/components/ThemeProvider";
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className="dark h-full antialiased selection:bg-[#0071e3]/40 selection:text-white">
-      <body className="min-h-full bg-black text-white flex flex-col font-sans touch-manipulation safe-bottom">
-        {children}
+    <html lang="pt-BR" suppressHydrationWarning className="h-full antialiased selection:bg-[#0071e3]/40 selection:text-white">
+      <body className="min-h-full bg-background text-foreground flex flex-col font-sans touch-manipulation safe-bottom">
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

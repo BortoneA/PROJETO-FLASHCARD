@@ -1,4 +1,4 @@
-﻿import { getDueCardsForDeck } from "@/app/actions/flashcards";
+import { getDueCardsForDeck } from "@/app/actions/flashcards";
 import { db } from "@/lib/db";
 import FlashcardDeck from "@/components/FlashcardDeck";
 import { notFound } from "next/navigation";
@@ -24,7 +24,7 @@ export default async function StudyPage({
   const cards = await getDueCardsForDeck(deckId);
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-white antialiased">
+    <main className="min-h-screen bg-background text-foreground antialiased transition-colors">
       <FlashcardDeck deckId={deckId} deckTitle={deckTitle} initialCards={cards} />
     </main>
   );
