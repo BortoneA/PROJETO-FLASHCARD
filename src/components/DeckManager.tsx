@@ -5,11 +5,12 @@ import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
 import {
   Plus, Sparkles, ArrowRight, Download, Trash2, Zap, Play,
   Layers, BookOpen, Flame, Trophy, Award, Star, BarChart3,
-  Image as ImageIcon, TrendingUp, Target, Clock
+  Image as ImageIcon, TrendingUp, Target, Clock, Upload, Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import AnalyticsModal from "./AnalyticsModal";
+import { useRouter } from "next/navigation";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -29,11 +30,13 @@ const cardVariants = {
 };
 
 export default function DeckManager({ decks, userProfile }: { decks: any[]; userProfile: any }) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -71,6 +74,35 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
     setDescription("");
     setCoverUrl("");
     setIsModalOpen(false);
+  };
+
+  const handleImportApkg = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsImporting(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/import-apkg", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erro na importação");
+      }
+
+      alert("Baralho importado com sucesso!");
+      router.refresh();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsImporting(false);
+      e.target.value = "";
+    }
   };
 
   const handleCreateCard = async (e: React.FormEvent) => {
@@ -242,8 +274,20 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               className="w-full sm:w-auto py-3.5 sm:py-4 px-6 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl sm:rounded-2xl backdrop-blur-xl border border-white/10 hover:border-white/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm min-h-[48px] touch-manipulation"
             >
               <Plus size={16} />
-              <span>Novo Baralho</span>
+              <span>Novo</span>
             </button>
+
+            <label className="w-full sm:w-auto py-3.5 sm:py-4 px-6 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl sm:rounded-2xl backdrop-blur-xl border border-white/10 hover:border-white/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm min-h-[48px] touch-manipulation cursor-pointer">
+              {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+              <span>{isImporting ? "Importando..." : "Importar .APKG"}</span>
+              <input 
+                type="file" 
+                accept=".apkg" 
+                className="hidden" 
+                onChange={handleImportApkg} 
+                disabled={isImporting} 
+              />
+            </label>
           </div>
         </div>
       </motion.div>
