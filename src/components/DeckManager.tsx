@@ -185,56 +185,59 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1], delay: 0.15 }}
-        className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 p-5 sm:p-8 lg:p-10 text-white shadow-2xl shadow-[#0071e3]/15 border border-blue-400/30 dark:border-white/10"
+        className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950 dark:from-zinc-900 dark:via-black dark:to-zinc-950 p-5 sm:p-8 lg:p-10 text-white shadow-2xl border border-white/10"
       >
-        {/* Ambient blurs */}
-        <div className="absolute -top-20 -right-20 w-56 sm:w-80 h-56 sm:h-80 bg-cyan-400/15 rounded-full blur-[80px] pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-56 sm:w-80 h-56 sm:h-80 bg-pink-500/15 rounded-full blur-[80px] pointer-events-none" />
+        {/* Ambient blurs - Apple Intelligence style */}
+        <div className="absolute -top-24 -right-12 w-64 sm:w-96 h-64 sm:h-96 bg-gradient-to-br from-blue-500/30 to-purple-600/30 rounded-full blur-[80px] pointer-events-none animate-float-up" />
+        <div className="absolute -bottom-24 -left-12 w-64 sm:w-96 h-64 sm:h-96 bg-gradient-to-tr from-emerald-500/20 to-cyan-500/30 rounded-full blur-[80px] pointer-events-none animate-pulse" />
+        
+        {/* Subtle grid pattern over lay */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNykiLz48L3N2Zz4=')] opacity-50" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-8">
           <div className="space-y-2 sm:space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 backdrop-blur-xl border border-white/15 rounded-full text-[10px] sm:text-xs font-bold tracking-wider uppercase">
-              <Sparkles size={12} className="text-cyan-300 animate-pulse" />
-              <span>SM-2 Spaced Repetition</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase">
+              <Sparkles size={12} className="text-blue-400 animate-pulse" />
+              <span className="text-zinc-300">SM-2 Spaced Repetition</span>
             </div>
 
-            <h1 className="text-xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-indigo-200">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
               Sua Central de Estudos
             </h1>
 
-            <p className="text-blue-100/90 dark:text-blue-100/70 text-xs sm:text-sm font-normal leading-relaxed max-w-lg">
+            <p className="text-zinc-400 text-xs sm:text-sm font-medium leading-relaxed max-w-lg">
               {"Sincroniza\u00e7\u00e3o em tempo real com Neon DB. Revise baralhos individuais ou estude "}
-              <span className="font-semibold text-white">todos os cards pendentes</span>.
+              <span className="font-bold text-white">todos os cards pendentes</span>.
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 sm:gap-5 pt-1 text-[10px] sm:text-xs font-semibold text-blue-100 dark:text-blue-200/80">
-              <div className="flex items-center gap-1">
-                <Layers size={13} className="text-cyan-300" />
+            <div className="flex flex-wrap items-center gap-3 sm:gap-5 pt-3 text-[10px] sm:text-xs font-bold text-zinc-400">
+              <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                <Layers size={14} className="text-blue-400" />
                 <span>{decks.length} Decks</span>
               </div>
-              <div className="flex items-center gap-1">
-                <BookOpen size={13} className="text-indigo-300" />
+              <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                <BookOpen size={14} className="text-purple-400" />
                 <span>{totalCardsAll} Cards</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Clock size={13} className="text-amber-300" />
+              <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                <Clock size={14} className="text-amber-400" />
                 <span>{totalDueAll} Pendentes</span>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-2.5 pt-1 sm:pt-0 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 sm:pt-0 shrink-0">
             <Link
               href="/study/all"
-              className="w-full sm:w-auto py-3 sm:py-3.5 px-5 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-zinc-950 font-extrabold rounded-xl sm:rounded-2xl shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm min-h-[48px] touch-manipulation"
+              className="w-full sm:w-auto py-3.5 sm:py-4 px-6 bg-white text-zinc-950 hover:bg-zinc-100 font-extrabold rounded-xl sm:rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.15)] active:scale-95 transition-all flex items-center justify-center gap-2 text-sm min-h-[48px] touch-manipulation"
             >
               <Play size={16} className="fill-current" />
-              <span>Estudar Todos ({totalDueAll})</span>
+              <span>Estudar Todos</span>
             </Link>
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="w-full sm:w-auto py-3 sm:py-3.5 px-5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl sm:rounded-2xl backdrop-blur-xl border border-white/15 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm min-h-[48px] touch-manipulation"
+              className="w-full sm:w-auto py-3.5 sm:py-4 px-6 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl sm:rounded-2xl backdrop-blur-xl border border-white/10 hover:border-white/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm min-h-[48px] touch-manipulation"
             >
               <Plus size={16} />
               <span>Novo Baralho</span>
