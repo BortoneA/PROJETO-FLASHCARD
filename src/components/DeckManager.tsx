@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
+import RichToolbar from "./RichToolbar";
 import {
   Plus, Sparkles, ArrowRight, Download, Trash2, Zap, Play,
   Layers, BookOpen, Flame, Trophy, Award, Star, BarChart3,
@@ -47,6 +48,9 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
   const [back, setBack] = useState("");
   const [extra, setExtra] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+
+  const frontRef = useRef<HTMLTextAreaElement>(null);
+  const backRef = useRef<HTMLTextAreaElement>(null);
 
   const totalDueAll = decks.reduce((acc: number, d: any) => acc + d.dueCardsCount, 0);
   const totalCardsAll = decks.reduce((acc: number, d: any) => acc + d.totalCards, 0);
@@ -524,26 +528,34 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               </h2>
               <form onSubmit={handleCreateCard} className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">Frente (Pergunta - Suporta Markdown)</label>
-                  <input
-                    type="text"
-                    required
-                    value={front}
-                    onChange={(e) => setFront(e.target.value)}
-                    placeholder={`Qual a f\u00f3rmula da \u00e1gua?`}
-                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none min-h-[48px] transition-colors"
-                  />
+                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">Frente (Pergunta)</label>
+                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-colors focus-within:ring-2 focus-within:ring-[#0071e3]">
+                    <RichToolbar textareaRef={frontRef} value={front} onChange={setFront} />
+                    <textarea
+                      ref={frontRef}
+                      required
+                      value={front}
+                      onChange={(e) => setFront(e.target.value)}
+                      placeholder={`Qual a f\u00f3rmula da \u00e1gua?`}
+                      rows={2}
+                      className="w-full p-3 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium outline-none resize-none transition-colors border-0"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">Verso (Resposta - Suporta Markdown)</label>
-                  <textarea
-                    required
-                    value={back}
-                    onChange={(e) => setBack(e.target.value)}
-                    placeholder={`H\u2082O - Composta por 2 Hidrog\u00eanios e 1 Oxig\u00eanio.`}
-                    rows={2}
-                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none resize-none transition-colors"
-                  />
+                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">Verso (Resposta)</label>
+                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-colors focus-within:ring-2 focus-within:ring-[#0071e3]">
+                    <RichToolbar textareaRef={backRef} value={back} onChange={setBack} />
+                    <textarea
+                      ref={backRef}
+                      required
+                      value={back}
+                      onChange={(e) => setBack(e.target.value)}
+                      placeholder={`H\u2082O - Composta por 2 Hidrog\u00eanios e 1 Oxig\u00eanio.`}
+                      rows={3}
+                      className="w-full p-3 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium outline-none resize-none transition-colors border-0"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">URL da Imagem (Opcional)</label>
