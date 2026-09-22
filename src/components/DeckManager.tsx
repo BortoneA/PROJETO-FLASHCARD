@@ -3,10 +3,11 @@
 import { useState, useRef } from "react";
 import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
 import RichToolbar from "./RichToolbar";
+import DeckEditModal from "./DeckEditModal";
 import {
   Plus, Sparkles, ArrowRight, Download, Trash2, Zap, Play,
   Layers, BookOpen, Flame, Trophy, Award, Star, BarChart3,
-  Image as ImageIcon, TrendingUp, Target, Clock, Upload, Loader2
+  Image as ImageIcon, TrendingUp, Target, Clock, Upload, Loader2, Pencil
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,6 +39,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [editingDeck, setEditingDeck] = useState<any | null>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -350,6 +352,13 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                         </span>
                       )}
                       <button
+                        onClick={() => setEditingDeck(deck)}
+                        className="p-2 text-zinc-400 hover:text-[#0071e3] dark:text-zinc-600 dark:hover:text-[#0071e3] hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center touch-manipulation"
+                        title="Editar Baralho"
+                      >
+                        <Pencil size={15} />
+                      </button>
+                      <button
                         onClick={() => handleDeleteDeck(deck.id)}
                         disabled={deletingId === deck.id}
                         className="p-2 text-zinc-400 hover:text-rose-500 dark:text-zinc-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center touch-manipulation"
@@ -601,6 +610,15 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
       {/* ═══════════ ANALYTICS MODAL ═══════════ */}
       <AnalyticsModal isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} />
+
+      {/* ═══════════ EDIT DECK MODAL ═══════════ */}
+      {editingDeck && (
+        <DeckEditModal
+          deck={editingDeck}
+          isOpen={!!editingDeck}
+          onClose={() => setEditingDeck(null)}
+        />
+      )}
     </div>
   );
 }

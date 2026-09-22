@@ -77,6 +77,40 @@ export async function deleteDeck(id: string) {
   revalidatePath("/");
 }
 
+export async function updateDeck(id: string, data: { title?: string; description?: string; icon?: string; color?: string; coverUrl?: string | null }) {
+  const deck = await db.deck.update({
+    where: { id },
+    data,
+  });
+  revalidatePath("/");
+  return deck;
+}
+
+export async function getCardsForDeck(deckId: string) {
+  return await db.card.findMany({
+    where: { deckId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function updateCard(id: string, data: { front?: string; back?: string; extra?: string | null; imageUrl?: string | null }) {
+  const card = await db.card.update({
+    where: { id },
+    data,
+  });
+  revalidatePath(`/study/${card.deckId}`);
+  revalidatePath("/");
+  return card;
+}
+
+export async function deleteCard(id: string) {
+  const card = await db.card.findUnique({ where: { id } });
+  if (!card) throw new Error("Card n\u00e3o encontrado");
+  await db.card.delete({ where: { id } });
+  revalidatePath(`/study/${card.deckId}`);
+  revalidatePath("/");
+}
+
 export async function getDueCardsForDeck(deckId: string) {
   const now = new Date();
 
