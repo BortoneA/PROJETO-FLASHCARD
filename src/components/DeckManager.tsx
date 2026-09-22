@@ -38,6 +38,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("\uD83D\uDCDA");
+  const [coverUrl, setCoverUrl] = useState("");
 
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
@@ -65,9 +66,10 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
   const handleCreateDeck = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    await createDeck(title, description, icon);
+    await createDeck(title, description, icon, undefined, coverUrl);
     setTitle("");
     setDescription("");
+    setCoverUrl("");
     setIsModalOpen(false);
   };
 
@@ -276,13 +278,22 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 variants={cardVariants}
                 exit="exit"
                 whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="group relative bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-lg flex flex-col justify-between transition-colors hover:border-[#0071e3]/40 dark:hover:border-[#0071e3]/30 hover:shadow-[0_8px_30px_rgba(0,113,227,0.12)]"
+                className="group relative bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/80 rounded-2xl sm:rounded-3xl shadow-lg flex flex-col justify-between transition-colors hover:border-[#0071e3]/40 dark:hover:border-[#0071e3]/30 hover:shadow-[0_8px_30px_rgba(0,113,227,0.12)] overflow-hidden"
               >
-                <div>
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <span className="text-xl sm:text-2xl p-2.5 sm:p-3 bg-zinc-100 dark:bg-zinc-800/60 rounded-xl sm:rounded-2xl border border-zinc-200 dark:border-zinc-700/40 transition-colors">
-                      {deck.icon}
-                    </span>
+                {deck.coverUrl && (
+                  <div className="absolute inset-0 top-0 h-32 w-full z-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-white/70 dark:to-zinc-900/60 z-10" />
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white/70 dark:from-zinc-900/60 to-transparent z-10" />
+                    <img src={deck.coverUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="" />
+                  </div>
+                )}
+                
+                <div className="p-4 sm:p-6 relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <span className="text-xl sm:text-2xl p-2.5 sm:p-3 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md rounded-xl sm:rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm transition-colors">
+                        {deck.icon}
+                      </span>
 
                     <div className="flex items-center gap-1.5">
                       {deck.dueCardsCount > 0 && (
@@ -350,6 +361,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     <Plus size={15} />
                   </button>
                 </div>
+                </div>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -407,6 +419,16 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     placeholder={`Breve resumo do conte\u00fado deste deck`}
                     rows={2}
                     className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none resize-none transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">{`URL da Capa (Opcional)`}</label>
+                  <input
+                    type="url"
+                    value={coverUrl}
+                    onChange={(e) => setCoverUrl(e.target.value)}
+                    placeholder="https://exemplo.com/capa.jpg"
+                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none min-h-[48px] text-xs transition-colors"
                   />
                 </div>
 

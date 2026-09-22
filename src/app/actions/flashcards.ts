@@ -58,13 +58,14 @@ export async function getDecks() {
   });
 }
 
-export async function createDeck(title: string, description?: string, icon?: string, color?: string) {
+export async function createDeck(title: string, description?: string, icon?: string, color?: string, coverUrl?: string) {
   const deck = await db.deck.create({
     data: {
       title,
       description,
       icon: icon || "\uD83D\uDCDA",
       color: color || "#0071e3",
+      coverUrl: coverUrl || null,
     },
   });
   revalidatePath("/");

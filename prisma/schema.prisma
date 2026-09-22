@@ -14,6 +14,7 @@ model Deck {
   description String?
   icon        String   @default("?")
   color       String   @default("#0071e3")
+  coverUrl    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   cards       Card[]
