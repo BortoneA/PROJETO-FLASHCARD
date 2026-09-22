@@ -25,7 +25,7 @@ export default async function HomePage() {
             </div>
             <div>
               <span className="font-extrabold text-lg sm:text-xl tracking-tight">Anki Pro</span>
-              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs font-semibold text-zinc-600 bg-zinc-200 dark:text-zinc-500 dark:bg-zinc-800/80 px-2 sm:px-2.5 py-0.5 rounded-full hidden xs:inline transition-colors">
+              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs font-semibold text-zinc-600 bg-zinc-200 dark:text-zinc-400 dark:bg-zinc-800/80 px-2 sm:px-2.5 py-0.5 rounded-full hidden xs:inline transition-colors">
                 Apple Edition
               </span>
             </div>
@@ -34,7 +34,7 @@ export default async function HomePage() {
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] sm:text-xs font-semibold text-zinc-600 dark:text-zinc-500 hidden xs:inline">Neon DB</span>
+              <span className="text-[10px] sm:text-xs font-semibold text-zinc-600 dark:text-zinc-400 hidden xs:inline">Neon DB</span>
             </div>
             <ThemeToggle />
           </div>

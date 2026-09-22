@@ -322,7 +322,7 @@ export default function FlashcardDeck({
                 <div className="text-lg sm:text-2xl font-extrabold text-zinc-900 dark:text-white leading-snug break-words max-w-full prose-card transition-colors">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.front}</ReactMarkdown>
                 </div>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-6 flex items-center gap-1.5 transition-colors">
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-6 flex items-center gap-1.5 transition-colors">
                   <RotateCcw size={11} /> Toque para virar
                 </p>
               </div>
@@ -368,7 +368,7 @@ export default function FlashcardDeck({
                 >
                   <span className={`text-[9px] sm:text-[10px] ${c.subtext} font-medium`}>{btn.time}</span>
                   <span className="font-black text-[11px] sm:text-sm">{btn.label}</span>
-                  <span className="text-[8px] text-zinc-400 dark:text-zinc-600 font-mono hidden sm:block">[{btn.key}]</span>
+                  <span className="text-[8px] text-zinc-400 dark:text-zinc-500 font-mono hidden sm:block">[{btn.key}]</span>
                 </button>
               );
             })}

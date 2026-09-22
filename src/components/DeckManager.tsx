@@ -185,7 +185,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 transition={{ duration: 1.4, ease: [0.23, 1, 0.32, 1], delay: 0.3 }}
               />
             </div>
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-600 font-medium">
+            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
               {xpInCurrentLevel} / {xpNeededForLevel} XP para o {"pr\u00f3ximo n\u00edvel"}
             </p>
           </div>
@@ -381,7 +381,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                       {deck.totalCards} cards
                     </span>
-                    <span className="text-zinc-300 dark:text-zinc-700 transition-colors">{"•"}</span>
+                    <span className="text-zinc-300 dark:text-zinc-600 transition-colors">{"•"}</span>
                     <span className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       {deck.newCardsCount} novos
