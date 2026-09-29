@@ -4,11 +4,12 @@ import { useState, useRef, useMemo } from "react";
 import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
 import RichToolbar from "./RichToolbar";
 import DeckEditModal from "./DeckEditModal";
+import Mascot from "./Mascot";
 import {
   Plus, ArrowRight, Download, Trash2, Play,
-  Layers, BookOpen, Flame, Trophy, Star, BarChart3,
-  Image as ImageIcon, Clock, Upload, Loader2, Pencil,
-  Search, X, CheckCircle2, Sparkles, Filter
+  BookOpen, Flame, Gem, Crown, BarChart3,
+  Image as ImageIcon, Upload, Loader2, Pencil,
+  Search, X, CheckCircle2, Sparkles
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -144,188 +145,210 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-16">
-      {/* ═══════════ DASHBOARD OVERVIEW (COMMAND CENTER) ═══════════ */}
-      <section className="bg-white dark:bg-zinc-900/90 rounded-2xl sm:rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 sm:p-7 transition-colors">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          {/* Left Column: Greeting & Summary */}
-          <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-500" />
-              <span>{"Sess\u00e3o de Estudo"}</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
-              {totalDueAll > 0 ? (
-                <span>
-                  {"Voc\u00ea tem "}
-                  <span className="text-blue-600 dark:text-blue-400 underline decoration-blue-500/30 underline-offset-4">
-                    {totalDueAll} cards
-                  </span>
-                  {" para revisar hoje."}
-                </span>
-              ) : (
-                <span>{"Tudo em dia! Nenhum card pendente."}</span>
-              )}
-            </h1>
-
-            <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              {totalDueAll > 0
-                ? "Estudos distribu\u00eddos com o algoritmo de repeti\u00e7\u00e3o espa\u00e7ada SM-2 para reten\u00e7\u00e3o de longo prazo."
-                : "Voc\u00ea concluiu todas as revis\u00f5es agendadas. Aproveite para adicionar novos cards ou praticar baralhos espec\u00edficos."}
-            </p>
-
-            {/* Quick Actions Row */}
-            <div className="flex flex-wrap items-center gap-2.5 pt-2">
-              <Link
-                href="/study/all"
-                className={`py-2.5 px-5 font-bold rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-sm transition-all active:scale-95 touch-manipulation min-h-[42px] ${
-                  totalDueAll > 0
-                    ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20"
-                    : "bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-950"
-                }`}
-              >
-                <Play size={14} className="fill-current" />
-                <span>{totalDueAll > 0 ? `Estudar Todos (${totalDueAll})` : "Revisar Todos os Cards"}</span>
-              </Link>
-
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold rounded-xl text-xs sm:text-sm border border-zinc-200/80 dark:border-zinc-700/80 transition-all flex items-center gap-1.5 min-h-[42px] touch-manipulation"
-              >
-                <Plus size={15} />
-                <span>Novo Baralho</span>
-              </button>
-
-              <label className="py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold rounded-xl text-xs sm:text-sm border border-zinc-200/80 dark:border-zinc-700/80 transition-all flex items-center gap-1.5 min-h-[42px] touch-manipulation cursor-pointer">
-                {isImporting ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
-                <span>{isImporting ? "Importando..." : "Importar .APKG"}</span>
-                <input
-                  type="file"
-                  accept=".apkg"
-                  className="hidden"
-                  onChange={handleImportApkg}
-                  disabled={isImporting}
-                />
-              </label>
-
-              <button
-                onClick={() => setIsAnalyticsOpen(true)}
-                className="py-2.5 px-4 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/40 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium rounded-xl text-xs sm:text-sm border border-zinc-200/50 dark:border-zinc-700/40 transition-all flex items-center gap-1.5 min-h-[42px] touch-manipulation"
-              >
-                <BarChart3 size={15} />
-                <span>{"M\u00e9tricas"}</span>
-              </button>
-            </div>
+      {/* ═══════════ DUOLINGO MASCOT COMMAND BANNER ═══════════ */}
+      <section className="card-duo bg-white dark:bg-[#18191c] p-5 sm:p-7 shadow-sm transition-colors">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+          {/* Mascot with Dynamic Mood */}
+          <div className="shrink-0 flex flex-col items-center">
+            <Mascot
+              size={110}
+              mood={totalDueAll === 0 ? "cheering" : streak >= 3 ? "fire" : "happy"}
+              className="hover:scale-105 transition-transform"
+            />
           </div>
 
-          {/* Right Column: Key Metric Strip (Human & Clean) */}
-          <div className="grid grid-cols-2 gap-3 w-full lg:w-[360px] shrink-0">
-            {/* Metric 1: Due Cards */}
-            <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/80">
-              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 block">
-                Pendentes
-              </span>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-50 tabular-nums">
-                  {totalDueAll}
-                </span>
-                <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400">cards</span>
-              </div>
-            </div>
+          {/* Duolingo Speech Bubble */}
+          <div className="flex-1 w-full relative">
+            <div className="bg-[#f0f9eb] dark:bg-[#1b2617] border-2 border-[#bcf096] dark:border-[#385c22] rounded-3xl p-5 sm:p-6 relative shadow-sm">
+              {/* Speech bubble pointer triangle */}
+              <div className="hidden md:block absolute -left-3 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[12px] border-r-[#bcf096] dark:border-r-[#385c22] border-b-[8px] border-b-transparent" />
+              <div className="hidden md:block absolute -left-2 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[11px] border-r-[#f0f9eb] dark:border-r-[#1b2617] border-b-[8px] border-b-transparent" />
 
-            {/* Metric 2: Streak */}
-            <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/80">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-                  {"Const\u00e2ncia"}
-                </span>
-                <Flame size={14} className="text-amber-500" />
-              </div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
-                  {streak}
-                </span>
-                <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400">dias</span>
-              </div>
-            </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <span className="text-[11px] font-black uppercase tracking-wider text-[#46a302] dark:text-[#79d81d] flex items-center gap-1.5 mb-1">
+                    <Sparkles size={14} />
+                    {totalDueAll > 0 ? "Miss\u00e3o do Dia" : "Miss\u00e3o Cumprida!"}
+                  </span>
 
-            {/* Metric 3: Level & XP */}
-            <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/80 col-span-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm">{rankBadge}</span>
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">{rankTitle}</span>
-                  <span className="text-zinc-500 dark:text-zinc-400 text-[11px]">{"\u2022"} N\u00edvel {level}</span>
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                    {totalDueAll > 0 ? (
+                      <span>
+                        {"Voc\u00ea tem "}
+                        <span className="text-[#58cc02]">{totalDueAll} cards</span>
+                        {" para praticar hoje!"}
+                      </span>
+                    ) : (
+                      <span>{"Tudo em dia! Voc\u00ea \u00e9 impar\u00e1vel! \uD83C\uDF89"}</span>
+                    )}
+                  </h1>
+
+                  <p className="text-xs sm:text-sm font-semibold text-zinc-600 dark:text-zinc-300 mt-1 leading-relaxed">
+                    {totalDueAll > 0
+                      ? "Apenas 5 minutinhos para turbinar sua mem\u00f3ria e manter seu streak aceso!"
+                      : "Excelente trabalho! Revise baralhos livres ou crie novos cards para sua pr\u00f3xima meta."}
+                  </p>
                 </div>
-                <span className="text-zinc-600 dark:text-zinc-400 font-medium text-[11px] tabular-nums">{xp} XP</span>
               </div>
 
-              {/* Progress bar */}
-              <div className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700/60 rounded-full overflow-hidden mt-2.5">
-                <div
-                  className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-700"
-                  style={{ width: `${levelProgress}%` }}
-                />
-              </div>
-              <div className="flex justify-between items-center text-[10px] text-zinc-600 dark:text-zinc-400 mt-1">
-                <span>{xpInCurrentLevel} / {xpNeededForLevel} XP</span>
-                <span>{levelProgress}%</span>
+              {/* Action Buttons Row with 3D Duolingo buttons */}
+              <div className="flex flex-wrap items-center gap-3 pt-5 border-t border-[#d8f5be] dark:border-[#2a451b] mt-4">
+                <Link
+                  href="/study/all"
+                  className={`btn-duo-green px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center gap-2 shadow-sm ${
+                    totalDueAll === 0 ? "opacity-90" : ""
+                  }`}
+                >
+                  <Play size={16} className="fill-current" />
+                  <span>{totalDueAll > 0 ? `Praticar Tudo (${totalDueAll})` : "Praticar Livremente"}</span>
+                </Link>
+
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="btn-duo-white px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
+                >
+                  <Plus size={16} strokeWidth={3} />
+                  <span>Novo Baralho</span>
+                </button>
+
+                <label className="btn-duo-white px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 cursor-pointer">
+                  {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} strokeWidth={2.5} />}
+                  <span>{isImporting ? "Importando..." : "Importar .APKG"}</span>
+                  <input
+                    type="file"
+                    accept=".apkg"
+                    className="hidden"
+                    onChange={handleImportApkg}
+                    disabled={isImporting}
+                  />
+                </label>
+
+                <button
+                  onClick={() => setIsAnalyticsOpen(true)}
+                  className="btn-duo-blue px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
+                >
+                  <BarChart3 size={16} strokeWidth={2.5} />
+                  <span>Conquistas</span>
+                </button>
               </div>
             </div>
           </div>
         </div>
       </section>
 
+      {/* ═══════════ DUOLINGO 4-KPI TILES ═══════════ */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Tile 1: Due Cards */}
+        <div className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950/60 border-2 border-blue-300 dark:border-blue-700/60 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xl shrink-0">
+            {totalDueAll}
+          </div>
+          <div>
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
+              Para Revisar
+            </span>
+            <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white">
+              {totalDueAll > 0 ? "Pendentes hoje" : "Zero pend\u00eancias"}
+            </span>
+          </div>
+        </div>
+
+        {/* Tile 2: Streak */}
+        <div className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 border-2 border-amber-300 dark:border-amber-700/60 flex items-center justify-center text-amber-500 font-black text-xl shrink-0">
+            <Flame size={24} className="fill-amber-500 animate-pulse" />
+          </div>
+          <div>
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
+              Const\u00e2ncia
+            </span>
+            <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white">
+              {streak} {streak === 1 ? "dia" : "dias"} seguidos!
+            </span>
+          </div>
+        </div>
+
+        {/* Tile 3: Gems / XP */}
+        <div className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-cyan-100 dark:bg-cyan-950/60 border-2 border-cyan-300 dark:border-cyan-700/60 flex items-center justify-center text-cyan-600 dark:text-cyan-400 font-black text-xl shrink-0">
+            <Gem size={24} className="fill-cyan-500 text-cyan-500" />
+          </div>
+          <div>
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-600 dark:text-cyan-400 block">
+              Cristais de XP
+            </span>
+            <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white">
+              {xp} pontos
+            </span>
+          </div>
+        </div>
+
+        {/* Tile 4: Level & League */}
+        <div className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-yellow-100 dark:bg-yellow-950/60 border-2 border-yellow-300 dark:border-yellow-700/60 flex items-center justify-center text-yellow-600 dark:text-yellow-400 font-black text-xl shrink-0">
+            <Crown size={24} className="fill-yellow-500 text-yellow-500" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-yellow-600 dark:text-yellow-400 block">
+              Liga {level}
+            </span>
+            <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white truncate block">
+              {rankTitle}
+            </span>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════════ SEARCH & FILTER TOOLBAR ═══════════ */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Search Input */}
+        {/* Chunky Search Input */}
         <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar baralho por t\u00edtulo..."
-            className="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            className="w-full pl-11 pr-10 py-3 bg-white dark:bg-[#18191c] rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#58cc02] transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600"
             >
-              <X size={14} />
+              <X size={15} />
             </button>
           )}
         </div>
 
-        {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 self-start sm:self-auto">
+        {/* 3D Filter Tabs */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             onClick={() => setFilterTab("all")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
               filterTab === "all"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-[#58cc02] text-white border-b-4 border-[#46a302]"
+                : "btn-duo-white"
             }`}
           >
             Todos ({decks.length})
           </button>
           <button
             onClick={() => setFilterTab("due")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
               filterTab === "due"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-[#1cb0f6] text-white border-b-4 border-[#1899d6]"
+                : "btn-duo-white"
             }`}
           >
             Pendentes ({decksWithDue.length})
           </button>
           <button
             onClick={() => setFilterTab("new")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
               filterTab === "new"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                ? "bg-[#ff9600] text-white border-b-4 border-[#e58700]"
+                : "btn-duo-white"
             }`}
           >
             Novos
@@ -333,79 +356,70 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
         </div>
       </div>
 
-      {/* ═══════════ DECKS GRID ═══════════ */}
+      {/* ═══════════ DECKS GRID (DUOLINGO STAGE TILES) ═══════════ */}
       {filteredDecks.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 p-12 text-center bg-white/50 dark:bg-zinc-900/30">
-          <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-3 text-zinc-400">
-            <BookOpen size={20} />
+        <div className="card-duo bg-white dark:bg-[#18191c] p-12 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-zinc-100 dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 flex items-center justify-center mx-auto mb-3 text-3xl">
+            \uD83D\uDCD6
           </div>
-          <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-200">
-            {searchQuery ? "Nenhum baralho encontrado" : "Nenhum baralho cadastrado"}
+          <h3 className="text-lg font-black text-zinc-800 dark:text-zinc-200">
+            {searchQuery ? "Nenhum baralho encontrado" : "Nenhum baralho criado ainda"}
           </h3>
-          <p className="text-xs text-zinc-500 max-w-sm mx-auto mt-1">
+          <p className="text-xs font-semibold text-zinc-500 max-w-sm mx-auto mt-1">
             {searchQuery
-              ? `Nenhum resultado corresponde a "${searchQuery}". Tente outro termo ou limpe o filtro.`
-              : "Crie seu primeiro baralho ou importe um arquivo .apkg do Anki para come\u00e7ar."}
+              ? `Nenhum resultado corresponde a "${searchQuery}".`
+              : "Crie seu primeiro baralho ou importe um arquivo .apkg do Anki para come\u00e7ar suas li\u00e7\u00f5es!"}
           </p>
-          {searchQuery ? (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="mt-4 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-200"
-            >
-              Limpar busca
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700"
-            >
-              Criar Baralho
-            </button>
-          )}
+          <button
+            onClick={() => (searchQuery ? setSearchQuery("") : setIsModalOpen(true))}
+            className="btn-duo-green px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider mt-5"
+          >
+            {searchQuery ? "Limpar Busca" : "Criar Primeiro Baralho"}
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {filteredDecks.map((deck) => (
             <div
               key={deck.id}
-              className="group bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200 flex flex-col justify-between overflow-hidden"
+              className="card-duo bg-white dark:bg-[#18191c] hover:-translate-y-1 transition-all duration-150 flex flex-col justify-between overflow-hidden shadow-sm"
             >
               <div>
-                {/* Deck Card Cover or Header Banner */}
+                {/* Deck Card Cover or Chunky Header */}
                 {deck.coverUrl ? (
-                  <div className="h-32 sm:h-36 w-full relative overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-b border-zinc-200/80 dark:border-zinc-800">
+                  <div className="h-32 sm:h-36 w-full relative overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-b-2 border-zinc-200 dark:border-zinc-800">
                     <img
                       src={deck.coverUrl}
                       alt={deck.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                    {/* Icon Pill in bottom-left */}
-                    <div className="absolute left-3 bottom-3 px-2.5 py-1.5 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-xl text-lg shadow-sm border border-white/20">
+                    {/* Icon Bubble */}
+                    <div className="absolute left-3.5 bottom-3 px-3 py-1.5 bg-white dark:bg-[#18191c] rounded-2xl text-xl shadow-md border-2 border-zinc-200 dark:border-zinc-700">
                       {deck.icon}
                     </div>
-                    {/* Status Pill in top-right */}
+                    {/* Status Badge */}
                     {deck.dueCardsCount > 0 ? (
-                      <span className="absolute right-3 top-3 px-2.5 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-full shadow-sm">
+                      <span className="absolute right-3.5 top-3.5 px-3 py-1 bg-[#ff4b4b] border-b-2 border-[#ea2b2b] text-white text-[11px] font-black uppercase tracking-wider rounded-xl shadow-sm">
                         {deck.dueCardsCount} para hoje
                       </span>
                     ) : (
-                      <span className="absolute right-3 top-3 px-2 py-0.5 bg-emerald-600/90 text-white text-[10px] font-semibold rounded-full shadow-sm">
-                        Em dia
+                      <span className="absolute right-3.5 top-3.5 px-3 py-1 bg-[#58cc02] border-b-2 border-[#46a302] text-white text-[11px] font-black uppercase tracking-wider rounded-xl shadow-sm">
+                        Em dia!
                       </span>
                     )}
                   </div>
                 ) : (
                   <div className="p-4 sm:p-5 pb-0 flex items-start justify-between gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/70 dark:border-zinc-700/60 flex items-center justify-center text-2xl shadow-sm shrink-0">
+                    <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border-2 border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-3xl shadow-sm shrink-0">
                       {deck.icon}
                     </div>
                     {deck.dueCardsCount > 0 ? (
-                      <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 text-[11px] font-bold rounded-full">
+                      <span className="px-3 py-1.5 bg-rose-100 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 text-xs font-black uppercase tracking-wider rounded-xl">
                         {deck.dueCardsCount} para hoje
                       </span>
                     ) : (
-                      <span className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[10px] font-semibold rounded-full">
+                      <span className="px-3 py-1.5 bg-[#f0f9eb] dark:bg-[#1b2617] border-2 border-[#bcf096] dark:border-[#385c22] text-[#46a302] dark:text-[#79d81d] text-xs font-black uppercase tracking-wider rounded-xl">
                         Em dia
                       </span>
                     )}
@@ -414,33 +428,35 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
                 {/* Deck Card Info */}
                 <div className="p-4 sm:p-5">
-                  <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+                  <h3 className="font-black text-lg text-zinc-900 dark:text-zinc-100 leading-snug line-clamp-1">
                     {deck.title}
                   </h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-1.5 min-h-[32px] leading-relaxed">
-                    {deck.description || "Sem descri\u00e7\u00e3o fornecida."}
+                  <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 line-clamp-2 mt-1 min-h-[32px] leading-relaxed">
+                    {deck.description || "Pratique os cards deste baralho para dominar o conte\u00fado!"}
                   </p>
 
                   {/* Metadata Chips */}
-                  <div className="flex items-center gap-3 mt-4 text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  <div className="flex items-center gap-3 mt-4 text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                      <span className="w-2 h-2 rounded-full bg-[#1cb0f6]" />
                       {deck.totalCards} cards
                     </span>
-                    <span className="text-zinc-300 dark:text-zinc-700">{"\u2022"}</span>
-                    <span>{deck.newCardsCount} novos</span>
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                      <span className="w-2 h-2 rounded-full bg-[#58cc02]" />
+                      {deck.newCardsCount} novos
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons Footer */}
-              <div className="p-3 sm:p-4 pt-0 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center gap-1.5">
+              {/* Action Buttons Footer with Duolingo Buttons */}
+              <div className="p-3 sm:p-4 pt-0 border-t-2 border-zinc-100 dark:border-zinc-800/80 flex items-center gap-2">
                 <Link
                   href={`/study/${deck.id}`}
-                  className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95 touch-manipulation min-h-[38px]"
+                  className="flex-1 btn-duo-green py-2.5 px-4 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
                 >
-                  <span>Estudar</span>
-                  <ArrowRight size={14} />
+                  <span>Praticar</span>
+                  <ArrowRight size={15} strokeWidth={3} />
                 </Link>
 
                 <button
@@ -448,36 +464,36 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     setSelectedDeckId(deck.id);
                     setIsCardModalOpen(true);
                   }}
-                  className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition min-w-[38px] min-h-[38px] flex items-center justify-center touch-manipulation"
+                  className="btn-duo-white p-2 rounded-xl flex items-center justify-center"
                   title="Adicionar Card"
                 >
-                  <Plus size={16} />
+                  <Plus size={16} strokeWidth={3} />
                 </button>
 
                 <button
                   onClick={() => setEditingDeck(deck)}
-                  className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition min-w-[38px] min-h-[38px] flex items-center justify-center touch-manipulation"
+                  className="btn-duo-white p-2 rounded-xl flex items-center justify-center"
                   title="Editar Baralho"
                 >
-                  <Pencil size={15} />
+                  <Pencil size={15} strokeWidth={2.5} />
                 </button>
 
                 <a
                   href={`/api/export-apkg?deckId=${deck.id}`}
                   download
-                  className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition min-w-[38px] min-h-[38px] flex items-center justify-center touch-manipulation"
+                  className="btn-duo-white p-2 rounded-xl flex items-center justify-center"
                   title="Exportar .APKG"
                 >
-                  <Download size={15} />
+                  <Download size={15} strokeWidth={2.5} />
                 </a>
 
                 <button
                   onClick={() => handleDeleteDeck(deck.id)}
                   disabled={deletingId === deck.id}
-                  className="p-2 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition min-w-[38px] min-h-[38px] flex items-center justify-center touch-manipulation disabled:opacity-50"
+                  className="btn-duo-white p-2 rounded-xl text-rose-500 hover:text-rose-600 flex items-center justify-center disabled:opacity-50"
                   title="Excluir Baralho"
                 >
-                  <Trash2 size={15} />
+                  <Trash2 size={15} strokeWidth={2.5} />
                 </button>
               </div>
             </div>
@@ -496,37 +512,39 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-xl transition-colors"
+              className="card-duo bg-white dark:bg-[#18191c] p-6 w-full max-w-md shadow-2xl transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                  Criar Novo Baralho
-                </h2>
+                <div className="flex items-center gap-2">
+                  <Mascot size={32} mood="cheering" />
+                  <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+                    Criar Novo Baralho
+                  </h2>
+                </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="p-1 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </div>
 
               <form onSubmit={handleCreateDeck} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
                     {"\u00cdcone (Emoji)"}
                   </label>
                   <input
                     type="text"
                     value={icon}
                     onChange={(e) => setIcon(e.target.value)}
-                    className="w-16 p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-center text-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    className="w-16 p-2.5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-center text-xl font-bold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
                     {"T\u00edtulo do Baralho"}
                   </label>
                   <input
@@ -534,48 +552,48 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ex: Medicina - Farmacologia"
-                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    placeholder="Ex: Espanhol B\u00e1sico, Medicina..."
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-bold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
                     {"Descri\u00e7\u00e3o (Opcional)"}
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Breve resumo do conte\u00fado deste baralho"
+                    placeholder="O que voc\u00ea vai aprender neste baralho?"
                     rows={2}
-                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none"
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"URL da Capa (Opcional)"}
+                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    URL da Capa (Opcional)
                   </label>
                   <input
                     type="url"
                     value={coverUrl}
                     onChange={(e) => setCoverUrl(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    placeholder="https://..."
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 
-                <div className="flex gap-2.5 pt-2">
+                <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl text-xs transition"
+                    className="flex-1 btn-duo-white py-3 rounded-2xl font-black text-xs uppercase tracking-wider"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-sm"
+                    className="flex-1 btn-duo-green py-3 rounded-2xl font-black text-xs uppercase tracking-wider shadow-sm"
                   >
                     Criar Baralho
                   </button>
@@ -597,97 +615,98 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto transition-colors"
+              className="card-duo bg-white dark:bg-[#18191c] p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <ImageIcon size={18} className="text-blue-600" />
-                  Adicionar Flashcard
-                </h2>
+                <div className="flex items-center gap-2">
+                  <ImageIcon size={20} className="text-[#58cc02]" />
+                  <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
+                    Adicionar Novo Card
+                  </h2>
+                </div>
                 <button
                   onClick={() => setIsCardModalOpen(false)}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="p-1 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </div>
 
               <form onSubmit={handleCreateCard} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"Frente (Pergunta / T\u00f3pico)"}
+                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"Frente (Pergunta)"}
                   </label>
-                  <div className="rounded-xl border border-zinc-300 dark:border-zinc-700 overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+                  <div className="rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 overflow-hidden focus-within:border-[#58cc02]">
                     <RichToolbar textareaRef={frontRef} value={front} onChange={setFront} />
                     <textarea
                       ref={frontRef}
                       required
                       value={front}
                       onChange={(e) => setFront(e.target.value)}
-                      placeholder="Ex: O que \u00e9 repeti\u00e7\u00e3o espa\u00e7ada?"
+                      placeholder="Ex: Como se diz 'ol\u00e1' em japon\u00eas?"
                       rows={2}
-                      className="w-full p-3 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm outline-none resize-none"
+                      className="w-full p-3 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm font-semibold outline-none resize-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"Verso (Resposta / Conte\u00fado)"}
+                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"Verso (Resposta)"}
                   </label>
-                  <div className="rounded-xl border border-zinc-300 dark:border-zinc-700 overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+                  <div className="rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 overflow-hidden focus-within:border-[#58cc02]">
                     <RichToolbar textareaRef={backRef} value={back} onChange={setBack} />
                     <textarea
                       ref={backRef}
                       required
                       value={back}
                       onChange={(e) => setBack(e.target.value)}
-                      placeholder="Ex: T\u00e9cnica de memoriza\u00e7\u00e3o baseada no aumento progressivo dos intervalos..."
+                      placeholder="Ex: Konnichiwa (\u3053\u3093\u306b\u3061\u306f)"
                       rows={3}
-                      className="w-full p-3 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm outline-none resize-none"
+                      className="w-full p-3 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm font-semibold outline-none resize-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
                     URL da Imagem (Opcional)
                   </label>
                   <input
                     type="url"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://exemplo.com/diagrama.jpg"
-                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    placeholder="https://..."
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"Informa\u00e7\u00e3o Extra / Dica (Opcional)"}
+                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"Dica ou Explica\u00e7\u00e3o Extra (Opcional)"}
                   </label>
                   <input
                     type="text"
                     value={extra}
                     onChange={(e) => setExtra(e.target.value)}
-                    placeholder="Ex: Conceito proposto por Hermann Ebbinghaus"
-                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                    placeholder="Ex: Usado durante o dia como sauda\u00e7\u00e3o formal"
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 
-                <div className="flex gap-2.5 pt-2">
+                <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsCardModalOpen(false)}
-                    className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl text-xs transition"
+                    className="flex-1 btn-duo-white py-3 rounded-2xl font-black text-xs uppercase tracking-wider"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-sm"
+                    className="flex-1 btn-duo-green py-3 rounded-2xl font-black text-xs uppercase tracking-wider shadow-sm"
                   >
                     Salvar Card
                   </button>

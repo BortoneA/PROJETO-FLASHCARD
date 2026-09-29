@@ -7,6 +7,7 @@ import { getRetentionAnalytics } from "@/app/actions/flashcards";
 import { BarChart3, X, Target, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "./ThemeProvider";
+import Mascot from "./Mascot";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -33,9 +34,9 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
     datasets: [
       {
         data: [again, hard, good, easy],
-        backgroundColor: ["#f43f5e", "#f59e0b", "#10b981", "#2563eb"],
-        borderColor: theme === "dark" ? "#18181b" : "#ffffff",
-        borderWidth: 2,
+        backgroundColor: ["#ff4b4b", "#ff9600", "#58cc02", "#1cb0f6"],
+        borderColor: theme === "dark" ? "#18191c" : "#ffffff",
+        borderWidth: 3,
         borderRadius: 4,
       },
     ],
@@ -55,59 +56,68 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-xl space-y-5 max-h-[85vh] overflow-y-auto transition-colors"
+            className="card-duo bg-white dark:bg-[#18191c] p-6 sm:p-7 w-full max-w-md shadow-2xl space-y-5 max-h-[88vh] overflow-y-auto transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <BarChart3 size={18} className="text-blue-600" />
-                <span>{"Desempenho e Reten\u00e7\u00e3o"}</span>
-              </h2>
+              <div className="flex items-center gap-2.5">
+                <Mascot size={34} mood="cheering" />
+                <h2 className="text-lg font-black text-zinc-900 dark:text-white">
+                  {"Minhas Conquistas"}
+                </h2>
+              </div>
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="p-1 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-              <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 sm:p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="card-duo bg-zinc-50 dark:bg-zinc-800/50 p-3.5">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Target size={12} className="text-zinc-500 dark:text-zinc-400" />
-                  <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-semibold">{"Total de Revis\u00f5es"}</span>
+                  <Target size={14} className="text-blue-500" />
+                  <span className="text-[11px] text-zinc-600 dark:text-zinc-300 font-black uppercase tracking-wider">
+                    {"Revis\u00f5es"}
+                  </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tabular-nums">{total}</div>
+                <div className="text-2xl font-black text-zinc-900 dark:text-white tabular-nums">{total}</div>
               </div>
 
-              <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 sm:p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
+              <div className="card-duo bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60 p-3.5">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp size={12} className="text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-semibold">{"Taxa de Reten\u00e7\u00e3o"}</span>
+                  <TrendingUp size={14} className="text-[#58cc02]" />
+                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-black uppercase tracking-wider">
+                    {"Reten\u00e7\u00e3o"}
+                  </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{retentionRate}%</div>
+                <div className="text-2xl font-black text-[#58cc02] tabular-nums">{retentionRate}%</div>
               </div>
 
-              <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 sm:p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
+              <div className="card-duo bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700/60 p-3.5">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <CheckCircle2 size={12} className="text-blue-600 dark:text-blue-400" />
-                  <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-semibold">Acertos</span>
+                  <CheckCircle2 size={14} className="text-[#1cb0f6]" />
+                  <span className="text-[11px] text-blue-700 dark:text-blue-400 font-black uppercase tracking-wider">
+                    Acertos
+                  </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 tabular-nums">{good + easy}</div>
+                <div className="text-2xl font-black text-[#1cb0f6] tabular-nums">{good + easy}</div>
               </div>
 
-              <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 sm:p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
+              <div className="card-duo bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700/60 p-3.5">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <XCircle size={12} className="text-rose-500 dark:text-rose-400" />
-                  <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-semibold">Erros</span>
+                  <XCircle size={14} className="text-[#ff4b4b]" />
+                  <span className="text-[11px] text-rose-700 dark:text-rose-400 font-black uppercase tracking-wider">
+                    Erros
+                  </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black text-rose-500 dark:text-rose-400 tabular-nums">{errorRate}%</div>
+                <div className="text-2xl font-black text-[#ff4b4b] tabular-nums">{errorRate}%</div>
               </div>
             </div>
 
-            {/* Chart */}
+            {/* Doughnut Chart */}
             {total > 0 ? (
               <div className="w-48 h-48 sm:w-52 sm:h-52 mx-auto pt-2">
                 <Doughnut
@@ -118,11 +128,11 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
                       legend: {
                         position: "bottom",
                         labels: {
-                          color: theme === "dark" ? "#a1a1aa" : "#71717a",
-                          font: { size: 11, family: "Plus Jakarta Sans" },
+                          color: theme === "dark" ? "#d4d4d8" : "#3f3f46",
+                          font: { size: 11, family: "Plus Jakarta Sans", weight: "bold" },
                           padding: 12,
                           usePointStyle: true,
-                          pointStyleWidth: 8,
+                          pointStyleWidth: 10,
                         },
                       },
                     },
@@ -130,12 +140,19 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
                 />
               </div>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-xs text-zinc-500">
-                  {"Realize algumas revis\u00f5es para visualizar o gr\u00e1fico de reten\u00e7\u00e3o e mem\u00f3ria."}
+              <div className="text-center py-6">
+                <p className="text-xs font-bold text-zinc-500">
+                  {"Pratique algumas li\u00e7\u00f5es para ver suas estat\u00edsticas de mem\u00f3ria!"}
                 </p>
               </div>
             )}
+
+            <button
+              onClick={onClose}
+              className="w-full btn-duo-green py-3 rounded-2xl font-black text-xs uppercase tracking-wider"
+            >
+              Fechar
+            </button>
           </motion.div>
         </div>
       )}

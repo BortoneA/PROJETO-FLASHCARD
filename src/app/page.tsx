@@ -1,7 +1,8 @@
 import { getDecks, getUserProfile, seedDemoDeckIfEmpty } from "@/app/actions/flashcards";
 import DeckManager from "@/components/DeckManager";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Layers, Sparkles } from "lucide-react";
+import Mascot from "@/components/Mascot";
+import { Flame, Gem, Crown } from "lucide-react";
 
 export const revalidate = 0;
 
@@ -11,42 +12,61 @@ export default async function HomePage() {
   const userProfile = await getUserProfile();
 
   const totalCards = decks.reduce((acc, d) => acc + d.totalCards, 0);
+  const streak = userProfile?.streak || 1;
+  const xp = userProfile?.xp || 0;
+  const level = userProfile?.level || 1;
 
   return (
-    <main className="min-h-screen bg-background text-foreground antialiased transition-colors duration-200">
-      {/* Top subtle border rule */}
-      <div className="border-b border-zinc-200/80 dark:border-zinc-800/80 bg-surface/80 backdrop-blur-md sticky top-0 z-30 transition-colors">
+    <main className="min-h-screen bg-[#f7f7f7] dark:bg-[#131416] text-foreground antialiased transition-colors duration-200">
+      {/* Duolingo Top Navbar */}
+      <header className="border-b-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18191c] sticky top-0 z-30 transition-colors shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-bold shadow-sm">
-              <Layers size={18} strokeWidth={2.2} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base tracking-tight text-zinc-900 dark:text-zinc-100">
-                  Recall
-                </span>
-                <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 px-2 py-0.5 rounded-md border border-zinc-200/60 dark:border-zinc-700/60 hidden sm:inline">
-                  {"Repeti\u00e7\u00e3o Espa\u00e7ada"}
-                </span>
-              </div>
+          {/* Logo & Brand Mascot */}
+          <div className="flex items-center gap-2.5">
+            <Mascot size={38} mood="happy" />
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-black text-2xl tracking-tight text-[#58cc02] hover:opacity-90 transition-opacity">
+                duocards
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-500 bg-amber-100 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-700/50 hidden xs:inline">
+                PRO
+              </span>
             </div>
           </div>
 
-          {/* Quick Header Actions */}
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100/80 dark:bg-zinc-800/60 border border-zinc-200/50 dark:border-zinc-700/40">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>{decks.length} {"baralhos"}</span>
-              <span className="text-zinc-300 dark:text-zinc-600">{"\u2022"}</span>
-              <span>{totalCards} cards</span>
+          {/* Duolingo Status Tokens (Flame, Gems, Crown) */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Streak Token */}
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-700/50 text-amber-600 dark:text-amber-400 font-black text-xs sm:text-sm select-none"
+              title={`${streak} dias de sequ\u00eancia!`}
+            >
+              <Flame size={16} className="fill-amber-500 text-amber-500 animate-pulse" />
+              <span>{streak}</span>
+            </div>
+
+            {/* Gems / XP Token */}
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-700/50 text-blue-600 dark:text-blue-400 font-black text-xs sm:text-sm select-none"
+              title={`${xp} cristais de XP`}
+            >
+              <Gem size={16} className="fill-blue-500 text-blue-500" />
+              <span>{xp}</span>
+            </div>
+
+            {/* Crown / Level Token */}
+            <div
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-yellow-50 dark:bg-yellow-950/30 border-2 border-yellow-300 dark:border-yellow-700/50 text-yellow-600 dark:text-yellow-400 font-black text-xs sm:text-sm select-none"
+              title={`N\u00edvel ${level}`}
+            >
+              <Crown size={16} className="fill-yellow-500 text-yellow-500" />
+              <span>{level}</span>
             </div>
 
             <ThemeToggle />
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Workspace */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">

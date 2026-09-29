@@ -13,6 +13,97 @@
   .rotate-y-180 {
     transform: rotateY(180deg);
   }
+
+  /* 🦉 Duolingo 3D Tactile Push-Buttons */
+  .btn-duo-green {
+    background-color: #58cc02;
+    border-bottom: 4px solid #46a302;
+    color: #ffffff;
+    transition: transform 0.08s ease, border-bottom-width 0.08s ease, background-color 0.1s ease;
+  }
+  .btn-duo-green:hover {
+    background-color: #61e002;
+  }
+  .btn-duo-green:active {
+    transform: translateY(3px);
+    border-bottom-width: 1px;
+  }
+
+  .btn-duo-blue {
+    background-color: #1cb0f6;
+    border-bottom: 4px solid #1899d6;
+    color: #ffffff;
+    transition: transform 0.08s ease, border-bottom-width 0.08s ease, background-color 0.1s ease;
+  }
+  .btn-duo-blue:hover {
+    background-color: #2ec0ff;
+  }
+  .btn-duo-blue:active {
+    transform: translateY(3px);
+    border-bottom-width: 1px;
+  }
+
+  .btn-duo-orange {
+    background-color: #ff9600;
+    border-bottom: 4px solid #e58700;
+    color: #ffffff;
+    transition: transform 0.08s ease, border-bottom-width 0.08s ease, background-color 0.1s ease;
+  }
+  .btn-duo-orange:hover {
+    background-color: #ffa826;
+  }
+  .btn-duo-orange:active {
+    transform: translateY(3px);
+    border-bottom-width: 1px;
+  }
+
+  .btn-duo-red {
+    background-color: #ff4b4b;
+    border-bottom: 4px solid #ea2b2b;
+    color: #ffffff;
+    transition: transform 0.08s ease, border-bottom-width 0.08s ease, background-color 0.1s ease;
+  }
+  .btn-duo-red:hover {
+    background-color: #ff6464;
+  }
+  .btn-duo-red:active {
+    transform: translateY(3px);
+    border-bottom-width: 1px;
+  }
+
+  .btn-duo-white {
+    background-color: #ffffff;
+    border: 2px solid #e5e5e5;
+    border-bottom: 4px solid #d4d4d8;
+    color: #27272a;
+    transition: transform 0.08s ease, border-bottom-width 0.08s ease, background-color 0.1s ease;
+  }
+  .dark .btn-duo-white {
+    background-color: #18181b;
+    border: 2px solid #27272a;
+    border-bottom: 4px solid #3f3f46;
+    color: #f4f4f5;
+  }
+  .btn-duo-white:hover {
+    background-color: #f4f4f5;
+  }
+  .dark .btn-duo-white:hover {
+    background-color: #27272a;
+  }
+  .btn-duo-white:active {
+    transform: translateY(3px);
+    border-bottom-width: 1px;
+  }
+
+  .card-duo {
+    border-radius: 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-bottom: 5px solid #d1d5db;
+  }
+  .dark .card-duo {
+    border: 2px solid #27272a;
+    border-bottom: 5px solid #3f3f46;
+  }
 }
 
 @theme {
