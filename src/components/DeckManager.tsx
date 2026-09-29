@@ -159,14 +159,14 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
           {/* Duolingo Speech Bubble */}
           <div className="flex-1 w-full relative">
-            <div className="bg-[#f0f9eb] dark:bg-[#1b2617] border-2 border-[#bcf096] dark:border-[#385c22] rounded-3xl p-5 sm:p-6 relative shadow-sm">
+            <div className="bg-[#f0f9eb] dark:bg-[#182228] border-2 border-[#bcf096] dark:border-[#28353d] rounded-3xl p-5 sm:p-6 relative shadow-sm">
               {/* Speech bubble pointer triangle */}
-              <div className="hidden md:block absolute -left-3 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[12px] border-r-[#bcf096] dark:border-r-[#385c22] border-b-[8px] border-b-transparent" />
-              <div className="hidden md:block absolute -left-2 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[11px] border-r-[#f0f9eb] dark:border-r-[#1b2617] border-b-[8px] border-b-transparent" />
+              <div className="hidden md:block absolute -left-3 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[12px] border-r-[#bcf096] dark:border-r-[#28353d] border-b-[8px] border-b-transparent" />
+              <div className="hidden md:block absolute -left-2 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[11px] border-r-[#f0f9eb] dark:border-r-[#182228] border-b-[8px] border-b-transparent" />
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#46a302] dark:text-[#79d81d] flex items-center gap-1.5 mb-1">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-[#46a302] dark:text-[#58cc02] flex items-center gap-1.5 mb-1">
                     <Sparkles size={14} />
                     {totalDueAll > 0 ? "Miss\u00e3o do Dia" : "Miss\u00e3o Cumprida!"}
                   </span>
@@ -192,7 +192,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               </div>
 
               {/* Action Buttons Row with 3D Duolingo buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-5 border-t border-[#d8f5be] dark:border-[#2a451b] mt-4">
+              <div className="flex flex-wrap items-center gap-3 pt-5 border-t border-[#d8f5be] dark:border-[#28353d]/80 mt-4">
                 <Link
                   href="/study/all"
                   className={`btn-duo-green px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center gap-2 shadow-sm ${
@@ -239,8 +239,8 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
       {/* ═══════════ DUOLINGO 4-KPI TILES ═══════════ */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Tile 1: Due Cards */}
-        <div className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950/60 border-2 border-blue-300 dark:border-blue-700/60 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xl shrink-0">
+        <div className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-500/15 border-2 border-blue-300 dark:border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xl shrink-0">
             {totalDueAll}
           </div>
           <div>
@@ -254,13 +254,13 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
         </div>
 
         {/* Tile 2: Streak */}
-        <div className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/60 border-2 border-amber-300 dark:border-amber-700/60 flex items-center justify-center text-amber-500 font-black text-xl shrink-0">
+        <div className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-500/15 border-2 border-amber-300 dark:border-amber-500/30 flex items-center justify-center text-amber-500 dark:text-amber-400 font-black text-xl shrink-0">
             <Flame size={24} className="fill-amber-500 animate-pulse" />
           </div>
           <div>
             <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
-              Const\u00e2ncia
+              {"Const\u00e2ncia"}
             </span>
             <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white">
               {streak} {streak === 1 ? "dia" : "dias"} seguidos!
@@ -269,8 +269,8 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
         </div>
 
         {/* Tile 3: Gems / XP */}
-        <div className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-100 dark:bg-cyan-950/60 border-2 border-cyan-300 dark:border-cyan-700/60 flex items-center justify-center text-cyan-600 dark:text-cyan-400 font-black text-xl shrink-0">
+        <div className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-cyan-100 dark:bg-cyan-500/15 border-2 border-cyan-300 dark:border-cyan-500/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 font-black text-xl shrink-0">
             <Gem size={24} className="fill-cyan-500 text-cyan-500" />
           </div>
           <div>
@@ -284,8 +284,8 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
         </div>
 
         {/* Tile 4: Level & League */}
-        <div className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-yellow-100 dark:bg-yellow-950/60 border-2 border-yellow-300 dark:border-yellow-700/60 flex items-center justify-center text-yellow-600 dark:text-yellow-400 font-black text-xl shrink-0">
+        <div className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-yellow-100 dark:bg-yellow-500/15 border-2 border-yellow-300 dark:border-yellow-500/30 flex items-center justify-center text-yellow-600 dark:text-yellow-400 font-black text-xl shrink-0">
             <Crown size={24} className="fill-yellow-500 text-yellow-500" />
           </div>
           <div className="min-w-0">
@@ -309,7 +309,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar baralho por t\u00edtulo..."
-            className="w-full pl-11 pr-10 py-3 bg-white dark:bg-[#18191c] rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#58cc02] transition-colors"
+            className="w-full pl-11 pr-10 py-3 bg-white dark:bg-[#182228] rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#58cc02] transition-colors"
           />
           {searchQuery && (
             <button
@@ -358,9 +358,9 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
       {/* ═══════════ DECKS GRID (DUOLINGO STAGE TILES) ═══════════ */}
       {filteredDecks.length === 0 ? (
-        <div className="card-duo bg-white dark:bg-[#18191c] p-12 text-center">
-          <div className="w-16 h-16 rounded-3xl bg-zinc-100 dark:bg-zinc-800 border-2 border-zinc-200 dark:border-zinc-700 flex items-center justify-center mx-auto mb-3 text-3xl">
-            \uD83D\uDCD6
+        <div className="card-duo bg-white dark:bg-[#182228] p-12 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-zinc-100 dark:bg-[#202b33] border-2 border-zinc-200 dark:border-[#28353d] flex items-center justify-center mx-auto mb-3 text-3xl">
+            <BookOpen size={36} className="text-zinc-400 dark:text-zinc-400" strokeWidth={2.5} />
           </div>
           <h3 className="text-lg font-black text-zinc-800 dark:text-zinc-200">
             {searchQuery ? "Nenhum baralho encontrado" : "Nenhum baralho criado ainda"}
@@ -382,12 +382,12 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           {filteredDecks.map((deck) => (
             <div
               key={deck.id}
-              className="card-duo bg-white dark:bg-[#18191c] hover:-translate-y-1 transition-all duration-150 flex flex-col justify-between overflow-hidden shadow-sm"
+              className="card-duo bg-white dark:bg-[#182228] hover:-translate-y-1 transition-all duration-150 flex flex-col justify-between overflow-hidden shadow-sm"
             >
               <div>
                 {/* Deck Card Cover or Chunky Header */}
                 {deck.coverUrl ? (
-                  <div className="h-32 sm:h-36 w-full relative overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-b-2 border-zinc-200 dark:border-zinc-800">
+                  <div className="h-32 sm:h-36 w-full relative overflow-hidden bg-zinc-100 dark:bg-[#202b33] border-b-2 border-zinc-200 dark:border-[#28353d]">
                     <img
                       src={deck.coverUrl}
                       alt={deck.title}
@@ -395,7 +395,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                     {/* Icon Bubble */}
-                    <div className="absolute left-3.5 bottom-3 px-3 py-1.5 bg-white dark:bg-[#18191c] rounded-2xl text-xl shadow-md border-2 border-zinc-200 dark:border-zinc-700">
+                    <div className="absolute left-3.5 bottom-3 px-3 py-1.5 bg-white dark:bg-[#182228] rounded-2xl text-xl shadow-md border-2 border-zinc-200 dark:border-[#28353d]">
                       {deck.icon}
                     </div>
                     {/* Status Badge */}
@@ -411,15 +411,15 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   </div>
                 ) : (
                   <div className="p-4 sm:p-5 pb-0 flex items-start justify-between gap-3">
-                    <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border-2 border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-3xl shadow-sm shrink-0">
+                    <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-[#202b33] border-2 border-zinc-200 dark:border-[#28353d] flex items-center justify-center text-3xl shadow-sm shrink-0">
                       {deck.icon}
                     </div>
                     {deck.dueCardsCount > 0 ? (
-                      <span className="px-3 py-1.5 bg-rose-100 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-400 text-xs font-black uppercase tracking-wider rounded-xl">
+                      <span className="px-3 py-1.5 bg-rose-50 dark:bg-rose-500/15 border-2 border-rose-300 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-black uppercase tracking-wider rounded-xl">
                         {deck.dueCardsCount} para hoje
                       </span>
                     ) : (
-                      <span className="px-3 py-1.5 bg-[#f0f9eb] dark:bg-[#1b2617] border-2 border-[#bcf096] dark:border-[#385c22] text-[#46a302] dark:text-[#79d81d] text-xs font-black uppercase tracking-wider rounded-xl">
+                      <span className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/15 border-2 border-emerald-300 dark:border-emerald-500/30 text-[#46a302] dark:text-[#58cc02] text-xs font-black uppercase tracking-wider rounded-xl">
                         Em dia
                       </span>
                     )}
@@ -436,12 +436,12 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   </p>
 
                   {/* Metadata Chips */}
-                  <div className="flex items-center gap-3 mt-4 text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                  <div className="flex items-center gap-3 mt-4 text-[11px] font-bold text-zinc-500 dark:text-zinc-300">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-[#202b33]">
                       <span className="w-2 h-2 rounded-full bg-[#1cb0f6]" />
                       {deck.totalCards} cards
                     </span>
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-[#202b33]">
                       <span className="w-2 h-2 rounded-full bg-[#58cc02]" />
                       {deck.newCardsCount} novos
                     </span>
@@ -450,7 +450,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               </div>
 
               {/* Action Buttons Footer with Duolingo Buttons */}
-              <div className="p-3 sm:p-4 pt-0 border-t-2 border-zinc-100 dark:border-zinc-800/80 flex items-center gap-2">
+              <div className="p-3 sm:p-4 pt-0 border-t-2 border-zinc-100 dark:border-[#28353d]/80 flex items-center gap-2">
                 <Link
                   href={`/study/${deck.id}`}
                   className="flex-1 btn-duo-green py-2.5 px-4 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
@@ -512,7 +512,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="card-duo bg-white dark:bg-[#18191c] p-6 w-full max-w-md shadow-2xl transition-colors"
+              className="card-duo bg-white dark:bg-[#182228] p-6 w-full max-w-md shadow-2xl transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -539,7 +539,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     type="text"
                     value={icon}
                     onChange={(e) => setIcon(e.target.value)}
-                    className="w-16 p-2.5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-center text-xl font-bold focus:border-[#58cc02] outline-none"
+                    className="w-16 p-2.5 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-zinc-50 dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-center text-xl font-bold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 
@@ -553,7 +553,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Ex: Espanhol B\u00e1sico, Medicina..."
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-bold focus:border-[#58cc02] outline-none"
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-bold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 
@@ -566,7 +566,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="O que voc\u00ea vai aprender neste baralho?"
                     rows={2}
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none resize-none"
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none resize-none"
                   />
                 </div>
 
@@ -579,7 +579,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     value={coverUrl}
                     onChange={(e) => setCoverUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 
@@ -615,7 +615,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="card-duo bg-white dark:bg-[#18191c] p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto transition-colors"
+              className="card-duo bg-white dark:bg-[#182228] p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -638,7 +638,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
                     {"Frente (Pergunta)"}
                   </label>
-                  <div className="rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 overflow-hidden focus-within:border-[#58cc02]">
+                  <div className="rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] overflow-hidden focus-within:border-[#58cc02]">
                     <RichToolbar textareaRef={frontRef} value={front} onChange={setFront} />
                     <textarea
                       ref={frontRef}
@@ -647,7 +647,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                       onChange={(e) => setFront(e.target.value)}
                       placeholder="Ex: Como se diz 'ol\u00e1' em japon\u00eas?"
                       rows={2}
-                      className="w-full p-3 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm font-semibold outline-none resize-none"
+                      className="w-full p-3 bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-semibold outline-none resize-none"
                     />
                   </div>
                 </div>
@@ -656,7 +656,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
                     {"Verso (Resposta)"}
                   </label>
-                  <div className="rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 overflow-hidden focus-within:border-[#58cc02]">
+                  <div className="rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] overflow-hidden focus-within:border-[#58cc02]">
                     <RichToolbar textareaRef={backRef} value={back} onChange={setBack} />
                     <textarea
                       ref={backRef}
@@ -665,7 +665,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                       onChange={(e) => setBack(e.target.value)}
                       placeholder="Ex: Konnichiwa (\u3053\u3093\u306b\u3061\u306f)"
                       rows={3}
-                      className="w-full p-3 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm font-semibold outline-none resize-none"
+                      className="w-full p-3 bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-semibold outline-none resize-none"
                     />
                   </div>
                 </div>
@@ -679,7 +679,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 
@@ -692,7 +692,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                     value={extra}
                     onChange={(e) => setExtra(e.target.value)}
                     placeholder="Ex: Usado durante o dia como sauda\u00e7\u00e3o formal"
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none"
+                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none"
                   />
                 </div>
 

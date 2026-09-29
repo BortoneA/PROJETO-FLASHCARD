@@ -278,7 +278,7 @@ export async function seedDemoDeckIfEmpty() {
 
   await db.deck.create({
     data: {
-      title: "Inglês Avançado & Vocabulário Apple",
+      title: "Ingl\u00eas Avan\u00e7ado & Vocabul\u00e1rio Apple",
       description: "Aprenda termos em ingl\u00eas e conceitos de design com o algoritmo Anki SM-2 em tempo real.",
       icon: "\uD83D\uDD25",
       color: "#0071e3",

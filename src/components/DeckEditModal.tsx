@@ -147,7 +147,7 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="card-duo bg-white dark:bg-[#18191c] p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto transition-colors"
+          className="card-duo bg-white dark:bg-[#182228] p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto transition-colors"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -174,7 +174,7 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
                 type="text"
                 value={deckIcon}
                 onChange={(e) => setDeckIcon(e.target.value)}
-                className="w-16 p-2.5 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-center text-xl font-bold focus:border-[#58cc02] outline-none"
+                className="w-16 p-2.5 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-zinc-50 dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-center text-xl font-bold focus:border-[#58cc02] outline-none"
               />
             </div>
 
@@ -186,7 +186,7 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
                 type="text"
                 value={deckTitle}
                 onChange={(e) => setDeckTitle(e.target.value)}
-                className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-bold focus:border-[#58cc02] outline-none"
+                className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-bold focus:border-[#58cc02] outline-none"
               />
             </div>
 
@@ -198,7 +198,7 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
                 value={deckDescription}
                 onChange={(e) => setDeckDescription(e.target.value)}
                 rows={2}
-                className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none resize-none"
+                className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none resize-none"
               />
             </div>
 
@@ -211,7 +211,7 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
                 value={deckCoverUrl}
                 onChange={(e) => setDeckCoverUrl(e.target.value)}
                 placeholder="https://..."
-                className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
+                className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
               />
             </div>
 
@@ -221,12 +221,12 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
               className="w-full btn-duo-green py-3 rounded-2xl font-black text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {savingDeck ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} strokeWidth={2.5} />}
-              Salvar Altera\u00e7\u00f5es
+              {"Salvar Altera\u00e7\u00f5es"}
             </button>
           </div>
 
           {/* ═══ CARDS SECTION ═══ */}
-          <div className="mt-6 pt-5 border-t-2 border-zinc-200 dark:border-zinc-800">
+          <div className="mt-6 pt-5 border-t-2 border-zinc-200 dark:border-[#28353d]">
             <button
               onClick={loadCards}
               className="w-full btn-duo-white py-3 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2"
@@ -256,34 +256,34 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
                     {cards.map((card) => (
                       <div
                         key={card.id}
-                        className="card-duo p-3 bg-zinc-50/70 dark:bg-zinc-800/40 transition-colors"
+                        className="card-duo p-3 bg-zinc-50/70 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] transition-colors"
                       >
                         {editingCardId === card.id ? (
                           /* ═══ EDITING MODE ═══ */
                           <div className="space-y-2.5">
                             <div>
                               <label className="block text-[10px] font-black uppercase text-zinc-500 mb-1">Frente</label>
-                              <div className="rounded-xl border-2 border-zinc-200 dark:border-zinc-700 overflow-hidden focus-within:border-[#58cc02]">
+                              <div className="rounded-xl border-2 border-zinc-200 dark:border-[#28353d] overflow-hidden focus-within:border-[#58cc02]">
                                 <RichToolbar textareaRef={editFrontRef} value={editFront} onChange={setEditFront} />
                                 <textarea
                                   ref={editFrontRef}
                                   value={editFront}
                                   onChange={(e) => setEditFront(e.target.value)}
                                   rows={2}
-                                  className="w-full p-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-xs font-semibold outline-none resize-none"
+                                  className="w-full p-2 bg-white dark:bg-[#182228] text-zinc-900 dark:text-zinc-100 text-xs font-semibold outline-none resize-none"
                                 />
                               </div>
                             </div>
                             <div>
                               <label className="block text-[10px] font-black uppercase text-zinc-500 mb-1">Verso</label>
-                              <div className="rounded-xl border-2 border-zinc-200 dark:border-zinc-700 overflow-hidden focus-within:border-[#58cc02]">
+                              <div className="rounded-xl border-2 border-zinc-200 dark:border-[#28353d] overflow-hidden focus-within:border-[#58cc02]">
                                 <RichToolbar textareaRef={editBackRef} value={editBack} onChange={setEditBack} />
                                 <textarea
                                   ref={editBackRef}
                                   value={editBack}
                                   onChange={(e) => setEditBack(e.target.value)}
                                   rows={3}
-                                  className="w-full p-2 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-xs font-semibold outline-none resize-none"
+                                  className="w-full p-2 bg-white dark:bg-[#182228] text-zinc-900 dark:text-zinc-100 text-xs font-semibold outline-none resize-none"
                                 />
                               </div>
                             </div>
@@ -292,7 +292,7 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
                               <input
                                 value={editExtra}
                                 onChange={(e) => setEditExtra(e.target.value)}
-                                className="w-full p-2 rounded-xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-xs font-semibold outline-none"
+                                className="w-full p-2 rounded-xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#182228] text-zinc-900 dark:text-zinc-100 text-xs font-semibold outline-none"
                               />
                             </div>
                             <div>
@@ -301,7 +301,7 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
                                 value={editImageUrl}
                                 onChange={(e) => setEditImageUrl(e.target.value)}
                                 placeholder="https://..."
-                                className="w-full p-2 rounded-xl border-2 border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-xs font-semibold outline-none"
+                                className="w-full p-2 rounded-xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#182228] text-zinc-900 dark:text-zinc-100 text-xs font-semibold outline-none"
                               />
                             </div>
                             <div className="flex gap-2 pt-1">

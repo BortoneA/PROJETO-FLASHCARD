@@ -89,7 +89,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, deckId: newDeck.id, importedCards: cardsToCreate.length });
   } catch (error: any) {
-    console.error("Erro na importação:", error);
+    console.error("Erro na importa\u00e7\u00e3o:", error);
     return NextResponse.json({ error: "Erro ao importar: " + error.message }, { status: 500 });
   }
 }

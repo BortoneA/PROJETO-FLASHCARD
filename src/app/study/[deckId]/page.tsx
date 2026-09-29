@@ -24,7 +24,7 @@ export default async function StudyPage({
   const cards = await getDueCardsForDeck(deckId);
 
   return (
-    <main className="min-h-screen bg-background text-foreground antialiased transition-colors">
+    <main className="min-h-screen bg-[#f7f7f7] dark:bg-[#131f24] text-foreground antialiased transition-colors">
       <FlashcardDeck deckId={deckId} deckTitle={deckTitle} initialCards={cards} />
     </main>
   );

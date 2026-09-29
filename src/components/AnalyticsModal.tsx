@@ -35,7 +35,7 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
       {
         data: [again, hard, good, easy],
         backgroundColor: ["#ff4b4b", "#ff9600", "#58cc02", "#1cb0f6"],
-        borderColor: theme === "dark" ? "#18191c" : "#ffffff",
+        borderColor: theme === "dark" ? "#182228" : "#ffffff",
         borderWidth: 3,
         borderRadius: 4,
       },
@@ -56,7 +56,7 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="card-duo bg-white dark:bg-[#18191c] p-6 sm:p-7 w-full max-w-md shadow-2xl space-y-5 max-h-[88vh] overflow-y-auto transition-colors"
+            className="card-duo bg-white dark:bg-[#182228] p-6 sm:p-7 w-full max-w-md shadow-2xl space-y-5 max-h-[88vh] overflow-y-auto transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -76,7 +76,7 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="card-duo bg-zinc-50 dark:bg-zinc-800/50 p-3.5">
+              <div className="card-duo bg-zinc-50 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] p-3.5">
                 <div className="flex items-center gap-1.5 mb-1">
                   <Target size={14} className="text-blue-500" />
                   <span className="text-[11px] text-zinc-600 dark:text-zinc-300 font-black uppercase tracking-wider">
@@ -86,7 +86,7 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
                 <div className="text-2xl font-black text-zinc-900 dark:text-white tabular-nums">{total}</div>
               </div>
 
-              <div className="card-duo bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60 p-3.5">
+              <div className="card-duo bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 p-3.5">
                 <div className="flex items-center gap-1.5 mb-1">
                   <TrendingUp size={14} className="text-[#58cc02]" />
                   <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-black uppercase tracking-wider">
@@ -96,7 +96,7 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
                 <div className="text-2xl font-black text-[#58cc02] tabular-nums">{retentionRate}%</div>
               </div>
 
-              <div className="card-duo bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700/60 p-3.5">
+              <div className="card-duo bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 p-3.5">
                 <div className="flex items-center gap-1.5 mb-1">
                   <CheckCircle2 size={14} className="text-[#1cb0f6]" />
                   <span className="text-[11px] text-blue-700 dark:text-blue-400 font-black uppercase tracking-wider">
@@ -106,7 +106,7 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
                 <div className="text-2xl font-black text-[#1cb0f6] tabular-nums">{good + easy}</div>
               </div>
 
-              <div className="card-duo bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700/60 p-3.5">
+              <div className="card-duo bg-rose-50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/30 p-3.5">
                 <div className="flex items-center gap-1.5 mb-1">
                   <XCircle size={14} className="text-[#ff4b4b]" />
                   <span className="text-[11px] text-rose-700 dark:text-rose-400 font-black uppercase tracking-wider">

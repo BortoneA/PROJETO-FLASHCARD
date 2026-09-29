@@ -129,7 +129,7 @@ export default function FlashcardDeck({
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="card-duo bg-white dark:bg-[#18191c] p-8 sm:p-10 max-w-md w-full shadow-xl transition-colors"
+          className="card-duo bg-white dark:bg-[#182228] p-8 sm:p-10 max-w-md w-full shadow-xl transition-colors border-2 border-zinc-200 dark:border-[#28353d]"
         >
           {/* Cheering Mascot */}
           <div className="mb-5 flex justify-center">
@@ -158,13 +158,13 @@ export default function FlashcardDeck({
 
           {completedCount > 0 && (
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="card-duo bg-zinc-50 dark:bg-zinc-800/60 p-3.5">
+              <div className="card-duo bg-zinc-50 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] p-3.5">
                 <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">
                   Cards Revisados
                 </span>
                 <span className="text-xl font-black text-zinc-900 dark:text-white">{completedCount}</span>
               </div>
-              <div className="card-duo bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 p-3.5">
+              <div className="card-duo bg-amber-50 dark:bg-amber-500/15 border-2 border-amber-300 dark:border-amber-500/30 p-3.5">
                 <span className="text-[10px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider block">
                   {"Sequ\u00eancia"}
                 </span>
@@ -213,7 +213,7 @@ export default function FlashcardDeck({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="card-duo bg-white dark:bg-[#18191c] p-7 rounded-3xl shadow-2xl max-w-xs w-full text-center"
+              className="card-duo bg-white dark:bg-[#182228] border-2 border-zinc-200 dark:border-[#28353d] p-7 rounded-3xl shadow-2xl max-w-xs w-full text-center"
             >
               <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-3xl flex items-center justify-center mx-auto mb-4 border-2 border-amber-300">
                 <Trophy size={36} />
@@ -250,7 +250,7 @@ export default function FlashcardDeck({
         </Link>
 
         {/* Duolingo Chunky Progress Bar */}
-        <div className="flex-1 h-4 bg-zinc-200 dark:bg-zinc-800 rounded-full border-2 border-zinc-300 dark:border-zinc-700 p-0.5 overflow-hidden">
+        <div className="flex-1 h-4 bg-zinc-200 dark:bg-[#131f24] rounded-full border-2 border-zinc-300 dark:border-[#28353d] p-0.5 overflow-hidden">
           <div
             className="h-full bg-[#58cc02] rounded-full transition-all duration-300 relative overflow-hidden shadow-[inset_0_-2px_0_rgba(0,0,0,0.2)]"
             style={{ width: `${progress}%` }}
@@ -262,7 +262,7 @@ export default function FlashcardDeck({
 
         {/* Quick Streak Badge */}
         {streak > 0 && (
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 font-black text-xs shrink-0">
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-500/15 border-2 border-amber-300 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 font-black text-xs shrink-0">
             <Flame size={14} className="fill-amber-500" />
             <span>{streak}</span>
           </div>
@@ -281,11 +281,11 @@ export default function FlashcardDeck({
             animate={{ rotateY: 0, opacity: 1 }}
             exit={{ rotateY: isFlipped ? 45 : -45, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="card-duo w-full min-h-[320px] sm:min-h-[380px] p-6 sm:p-8 bg-white dark:bg-[#18191c] flex flex-col items-center justify-center text-center shadow-md transition-colors"
+            className="card-duo w-full min-h-[320px] sm:min-h-[380px] p-6 sm:p-8 bg-white dark:bg-[#182228] border-2 border-zinc-200 dark:border-[#28353d] flex flex-col items-center justify-center text-center shadow-md transition-colors"
           >
             {/* Card Image */}
             {currentCard.imageUrl && (
-              <div className="mb-4 max-h-36 sm:max-h-44 rounded-2xl overflow-hidden border-2 border-zinc-200 dark:border-zinc-700">
+              <div className="mb-4 max-h-36 sm:max-h-44 rounded-2xl overflow-hidden border-2 border-zinc-200 dark:border-[#28353d]">
                 <img
                   src={currentCard.imageUrl}
                   alt="Anexo"
@@ -299,7 +299,7 @@ export default function FlashcardDeck({
               <div className="flex flex-col items-center justify-center w-full py-4">
                 <div className="flex items-center gap-2 mb-4">
                   <Mascot size={32} mood="happy" />
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#1cb0f6] bg-blue-50 dark:bg-blue-950/40 px-3 py-1 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-[#1cb0f6] bg-blue-50 dark:bg-blue-500/15 px-3 py-1 rounded-xl border-2 border-blue-200 dark:border-blue-500/30">
                     Pergunta
                   </span>
                 </div>
@@ -318,7 +318,7 @@ export default function FlashcardDeck({
               <div className="flex flex-col items-center justify-center w-full py-4">
                 <div className="flex items-center gap-2 mb-4">
                   <Mascot size={32} mood="cheering" />
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#58cc02] bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-xl border-2 border-emerald-200 dark:border-emerald-800">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-[#58cc02] bg-emerald-50 dark:bg-emerald-500/15 px-3 py-1 rounded-xl border-2 border-emerald-200 dark:border-emerald-500/30">
                     Resposta
                   </span>
                 </div>
@@ -328,7 +328,7 @@ export default function FlashcardDeck({
                 </div>
 
                 {currentCard.extra && (
-                  <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/80 p-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-700 max-w-sm w-full prose-card text-left mt-2">
+                  <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-[#131f24] p-4 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] max-w-sm w-full prose-card text-left mt-2">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.extra}</ReactMarkdown>
                   </div>
                 )}
@@ -362,7 +362,7 @@ export default function FlashcardDeck({
           >
             <span>Mostrar Resposta</span>
             <kbd className="text-xs bg-black/20 text-white px-2 py-0.5 rounded-lg hidden sm:inline">
-              Espa\u00e7o
+              {"Espa\u00e7o"}
             </kbd>
           </button>
         )}

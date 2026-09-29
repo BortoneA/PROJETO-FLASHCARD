@@ -1,4 +1,4 @@
-﻿import { db } from "@/lib/db";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import initSqlJs from "sql.js";
 import JSZip from "jszip";
@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const deckId = searchParams.get("deckId");
 
   if (!deckId) {
-    return NextResponse.json({ error: "deckId é obrigatório" }, { status: 400 });
+    return NextResponse.json({ error: "deckId \u00e9 obrigat\u00f3rio" }, { status: 400 });
   }
 
   const deck = await db.deck.findUnique({
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   });
 
   if (!deck) {
-    return NextResponse.json({ error: "Baralho não encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Baralho n\u00e3o encontrado" }, { status: 404 });
   }
 
   // Inicializa o motor SQLite em WebAssembly / Node

@@ -10,7 +10,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "Anki Pro - Flashcards & Spaced Repetition",
-  description: "App de Flashcards Anki Pro com sincronização em tempo real e visual premium",
+  description: "App de Flashcards Anki Pro com sincroniza\u00e7\u00e3o em tempo real e visual premium",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

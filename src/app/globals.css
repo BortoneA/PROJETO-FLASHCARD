@@ -79,16 +79,16 @@
     transition: transform 0.08s ease, border-bottom-width 0.08s ease, background-color 0.1s ease;
   }
   .dark .btn-duo-white {
-    background-color: #18181b;
-    border: 2px solid #27272a;
-    border-bottom: 4px solid #3f3f46;
-    color: #f4f4f5;
+    background-color: #242f36;
+    border: 2px solid #35424d;
+    border-bottom: 4px solid #182025;
+    color: #f1f5f9;
   }
   .btn-duo-white:hover {
     background-color: #f4f4f5;
   }
   .dark .btn-duo-white:hover {
-    background-color: #27272a;
+    background-color: #2b3842;
   }
   .btn-duo-white:active {
     transform: translateY(3px);
@@ -101,8 +101,9 @@
     border-bottom: 5px solid #d1d5db;
   }
   .dark .card-duo {
-    border: 2px solid #27272a;
-    border-bottom: 5px solid #3f3f46;
+    background-color: #182228;
+    border: 2px solid #28353d;
+    border-bottom: 5px solid #13191f;
   }
 }
 
@@ -121,8 +122,8 @@
 :root {
   --background: #f8fafc;
   --foreground: #09090b;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
+  --accent: #58cc02;
+  --accent-hover: #46a302;
   --card-bg: #ffffff;
   --card-border: rgba(15, 23, 42, 0.08);
   --surface: #ffffff;
@@ -132,14 +133,14 @@
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #f4f4f5;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --card-bg: #111114;
-  --card-border: rgba(255, 255, 255, 0.08);
-  --surface: #141418;
-  --muted: #a1a1aa;
+  --background: #131f24;
+  --foreground: #f4f6f8;
+  --accent: #58cc02;
+  --accent-hover: #46a302;
+  --card-bg: #182228;
+  --card-border: #28353d;
+  --surface: #182228;
+  --muted: #94a3b8;
 }
 
 /* Smooth scrolling & font optimization */

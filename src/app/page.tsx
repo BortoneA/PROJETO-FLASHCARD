@@ -17,9 +17,9 @@ export default async function HomePage() {
   const level = userProfile?.level || 1;
 
   return (
-    <main className="min-h-screen bg-[#f7f7f7] dark:bg-[#131416] text-foreground antialiased transition-colors duration-200">
+    <main className="min-h-screen bg-[#f7f7f7] dark:bg-[#131f24] text-foreground antialiased transition-colors duration-200">
       {/* Duolingo Top Navbar */}
-      <header className="border-b-2 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18191c] sticky top-0 z-30 transition-colors shadow-sm">
+      <header className="border-b-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#182228] sticky top-0 z-30 transition-colors shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           {/* Logo & Brand Mascot */}
           <div className="flex items-center gap-2.5">
@@ -28,7 +28,7 @@ export default async function HomePage() {
               <span className="font-black text-2xl tracking-tight text-[#58cc02] hover:opacity-90 transition-opacity">
                 duocards
               </span>
-              <span className="text-[10px] font-black uppercase tracking-wider text-amber-500 bg-amber-100 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-700/50 hidden xs:inline">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-500 bg-amber-100 dark:bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-500/30 hidden xs:inline">
                 PRO
               </span>
             </div>
@@ -38,7 +38,7 @@ export default async function HomePage() {
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Streak Token */}
             <div
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-700/50 text-amber-600 dark:text-amber-400 font-black text-xs sm:text-sm select-none"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-300 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 font-black text-xs sm:text-sm select-none"
               title={`${streak} dias de sequ\u00eancia!`}
             >
               <Flame size={16} className="fill-amber-500 text-amber-500 animate-pulse" />
@@ -47,7 +47,7 @@ export default async function HomePage() {
 
             {/* Gems / XP Token */}
             <div
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-700/50 text-blue-600 dark:text-blue-400 font-black text-xs sm:text-sm select-none"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border-2 border-blue-300 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 font-black text-xs sm:text-sm select-none"
               title={`${xp} cristais de XP`}
             >
               <Gem size={16} className="fill-blue-500 text-blue-500" />
@@ -56,7 +56,7 @@ export default async function HomePage() {
 
             {/* Crown / Level Token */}
             <div
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-yellow-50 dark:bg-yellow-950/30 border-2 border-yellow-300 dark:border-yellow-700/50 text-yellow-600 dark:text-yellow-400 font-black text-xs sm:text-sm select-none"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-yellow-50 dark:bg-yellow-500/10 border-2 border-yellow-300 dark:border-yellow-500/30 text-yellow-600 dark:text-yellow-400 font-black text-xs sm:text-sm select-none"
               title={`N\u00edvel ${level}`}
             >
               <Crown size={16} className="fill-yellow-500 text-yellow-500" />
