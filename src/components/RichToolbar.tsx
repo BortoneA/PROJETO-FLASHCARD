@@ -96,7 +96,7 @@ export default function RichToolbar({ textareaRef, value, onChange }: RichToolba
             type="button"
             onClick={tool.action}
             title={tool.label}
-            className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/80 dark:hover:bg-zinc-700/80 transition-all active:scale-90 touch-manipulation"
+            className="p-1.5 rounded-lg text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/90 dark:hover:bg-zinc-700/90 transition-all active:scale-90 touch-manipulation"
           >
             <Icon size={15} strokeWidth={2.2} />
           </button>

@@ -35,32 +35,32 @@ const ANSWER_BUTTONS = [
 
 const colorMap: Record<string, { bg: string; hover: string; text: string; border: string; subtext: string }> = {
   rose: {
-    bg: "bg-rose-50/80 dark:bg-rose-950/30",
-    hover: "hover:bg-rose-100 dark:hover:bg-rose-900/40",
-    text: "text-rose-700 dark:text-rose-300",
-    border: "border-rose-200/90 dark:border-rose-900/50",
-    subtext: "text-rose-500/80 dark:text-rose-400/80",
+    bg: "bg-rose-50/90 dark:bg-rose-950/40",
+    hover: "hover:bg-rose-100 dark:hover:bg-rose-900/50",
+    text: "text-rose-800 dark:text-rose-200",
+    border: "border-rose-200 dark:border-rose-800/60",
+    subtext: "text-rose-700 dark:text-rose-300 font-semibold",
   },
   amber: {
-    bg: "bg-amber-50/80 dark:bg-amber-950/30",
-    hover: "hover:bg-amber-100 dark:hover:bg-amber-900/40",
-    text: "text-amber-700 dark:text-amber-300",
-    border: "border-amber-200/90 dark:border-amber-900/50",
-    subtext: "text-amber-500/80 dark:text-amber-400/80",
+    bg: "bg-amber-50/90 dark:bg-amber-950/40",
+    hover: "hover:bg-amber-100 dark:hover:bg-amber-900/50",
+    text: "text-amber-800 dark:text-amber-200",
+    border: "border-amber-200 dark:border-amber-800/60",
+    subtext: "text-amber-700 dark:text-amber-300 font-semibold",
   },
   emerald: {
-    bg: "bg-emerald-50/80 dark:bg-emerald-950/30",
-    hover: "hover:bg-emerald-100 dark:hover:bg-emerald-900/40",
-    text: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-200/90 dark:border-emerald-900/50",
-    subtext: "text-emerald-500/80 dark:text-emerald-400/80",
+    bg: "bg-emerald-50/90 dark:bg-emerald-950/40",
+    hover: "hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
+    text: "text-emerald-800 dark:text-emerald-200",
+    border: "border-emerald-200 dark:border-emerald-800/60",
+    subtext: "text-emerald-700 dark:text-emerald-300 font-semibold",
   },
   blue: {
-    bg: "bg-blue-50/80 dark:bg-blue-950/30",
-    hover: "hover:bg-blue-100 dark:hover:bg-blue-900/40",
-    text: "text-blue-700 dark:text-blue-300",
-    border: "border-blue-200/90 dark:border-blue-900/50",
-    subtext: "text-blue-500/80 dark:text-blue-400/80",
+    bg: "bg-blue-50/90 dark:bg-blue-950/40",
+    hover: "hover:bg-blue-100 dark:hover:bg-blue-900/50",
+    text: "text-blue-800 dark:text-blue-200",
+    border: "border-blue-200 dark:border-blue-800/60",
+    subtext: "text-blue-700 dark:text-blue-300 font-semibold",
   },
 };
 
@@ -326,7 +326,7 @@ export default function FlashcardDeck({
                 <div className="text-lg sm:text-2xl font-bold text-zinc-900 dark:text-zinc-50 leading-relaxed break-words max-w-full prose-card">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.front}</ReactMarkdown>
                 </div>
-                <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-8 flex items-center gap-1.5 font-medium">
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-8 flex items-center gap-1.5 font-semibold">
                   <RotateCcw size={12} />
                   <span>Toque para virar o card</span>
                 </p>

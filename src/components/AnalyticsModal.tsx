@@ -76,8 +76,8 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 sm:p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Target size={12} className="text-zinc-500" />
-                  <span className="text-[11px] text-zinc-500 font-semibold">{"Total de Revis\u00f5es"}</span>
+                  <Target size={12} className="text-zinc-500 dark:text-zinc-400" />
+                  <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-semibold">{"Total de Revis\u00f5es"}</span>
                 </div>
                 <div className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tabular-nums">{total}</div>
               </div>
@@ -85,23 +85,23 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
               <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 sm:p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
                 <div className="flex items-center gap-1.5 mb-1">
                   <TrendingUp size={12} className="text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-[11px] text-zinc-500 font-semibold">{"Taxa de Reten\u00e7\u00e3o"}</span>
+                  <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-semibold">{"Taxa de Reten\u00e7\u00e3o"}</span>
                 </div>
                 <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{retentionRate}%</div>
               </div>
 
               <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 sm:p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <CheckCircle2 size={12} className="text-blue-600" />
-                  <span className="text-[11px] text-zinc-500 font-semibold">Acertos</span>
+                  <CheckCircle2 size={12} className="text-blue-600 dark:text-blue-400" />
+                  <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-semibold">Acertos</span>
                 </div>
                 <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 tabular-nums">{good + easy}</div>
               </div>
 
               <div className="bg-zinc-50 dark:bg-zinc-800/50 p-3 sm:p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <XCircle size={12} className="text-rose-500" />
-                  <span className="text-[11px] text-zinc-500 font-semibold">Erros</span>
+                  <XCircle size={12} className="text-rose-500 dark:text-rose-400" />
+                  <span className="text-[11px] text-zinc-600 dark:text-zinc-400 font-semibold">Erros</span>
                 </div>
                 <div className="text-xl sm:text-2xl font-black text-rose-500 dark:text-rose-400 tabular-nums">{errorRate}%</div>
               </div>

@@ -222,21 +222,21 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           <div className="grid grid-cols-2 gap-3 w-full lg:w-[360px] shrink-0">
             {/* Metric 1: Due Cards */}
             <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/80">
-              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-500 block">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400 block">
                 Pendentes
               </span>
               <div className="mt-1 flex items-baseline gap-2">
                 <span className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-50 tabular-nums">
                   {totalDueAll}
                 </span>
-                <span className="text-[11px] font-medium text-zinc-500">cards</span>
+                <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400">cards</span>
               </div>
             </div>
 
             {/* Metric 2: Streak */}
             <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/80">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                   {"Const\u00e2ncia"}
                 </span>
                 <Flame size={14} className="text-amber-500" />
@@ -245,19 +245,19 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
                   {streak}
                 </span>
-                <span className="text-[11px] font-medium text-zinc-500">dias</span>
+                <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400">dias</span>
               </div>
             </div>
 
             {/* Metric 3: Level & XP */}
             <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/80 col-span-2">
-              <div className="flex items-center justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+              <div className="flex items-center justify-between text-xs font-semibold text-zinc-800 dark:text-zinc-200">
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm">{rankBadge}</span>
                   <span className="font-bold text-zinc-900 dark:text-zinc-100">{rankTitle}</span>
-                  <span className="text-zinc-400 dark:text-zinc-500 text-[11px]">{"\u2022"} N\u00edvel {level}</span>
+                  <span className="text-zinc-500 dark:text-zinc-400 text-[11px]">{"\u2022"} N\u00edvel {level}</span>
                 </div>
-                <span className="text-zinc-500 font-medium text-[11px] tabular-nums">{xp} XP</span>
+                <span className="text-zinc-600 dark:text-zinc-400 font-medium text-[11px] tabular-nums">{xp} XP</span>
               </div>
 
               {/* Progress bar */}
@@ -267,7 +267,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                   style={{ width: `${levelProgress}%` }}
                 />
               </div>
-              <div className="flex justify-between items-center text-[10px] text-zinc-500 mt-1">
+              <div className="flex justify-between items-center text-[10px] text-zinc-600 dark:text-zinc-400 mt-1">
                 <span>{xpInCurrentLevel} / {xpNeededForLevel} XP</span>
                 <span>{levelProgress}%</span>
               </div>
