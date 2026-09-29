@@ -1,38 +1,24 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
 import RichToolbar from "./RichToolbar";
 import DeckEditModal from "./DeckEditModal";
 import {
-  Plus, Sparkles, ArrowRight, Download, Trash2, Zap, Play,
-  Layers, BookOpen, Flame, Trophy, Award, Star, BarChart3,
-  Image as ImageIcon, TrendingUp, Target, Clock, Upload, Loader2, Pencil
+  Plus, ArrowRight, Download, Trash2, Play,
+  Layers, BookOpen, Flame, Trophy, Star, BarChart3,
+  Image as ImageIcon, Clock, Upload, Loader2, Pencil,
+  Search, X, CheckCircle2, Sparkles, Filter
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import AnalyticsModal from "./AnalyticsModal";
 import { useRouter } from "next/navigation";
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
-  },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 24, scale: 0.96 },
-  visible: {
-    opacity: 1, y: 0, scale: 1,
-    transition: { duration: 0.5, ease: [0.23, 1, 0.32, 1] as const },
-  },
-  exit: { opacity: 0, scale: 0.92, transition: { duration: 0.25 } },
-};
-
 export default function DeckManager({ decks, userProfile }: { decks: any[]; userProfile: any }) {
   const router = useRouter();
+
+  // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
@@ -41,11 +27,17 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
   const [isImporting, setIsImporting] = useState(false);
   const [editingDeck, setEditingDeck] = useState<any | null>(null);
 
+  // Search & Filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterTab, setFilterTab] = useState<"all" | "due" | "new">("all");
+
+  // Create Deck form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("\uD83D\uDCDA");
   const [coverUrl, setCoverUrl] = useState("");
 
+  // Create Card form state
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
   const [extra, setExtra] = useState("");
@@ -54,6 +46,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
   const frontRef = useRef<HTMLTextAreaElement>(null);
   const backRef = useRef<HTMLTextAreaElement>(null);
 
+  // Aggregated metrics
   const totalDueAll = decks.reduce((acc: number, d: any) => acc + d.dueCardsCount, 0);
   const totalCardsAll = decks.reduce((acc: number, d: any) => acc + d.totalCards, 0);
 
@@ -71,6 +64,25 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
     100,
     Math.max(0, Math.round((xpInCurrentLevel / (xpNeededForLevel || 1)) * 100))
   );
+
+  // Filtered decks
+  const filteredDecks = useMemo(() => {
+    return decks.filter((deck) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        deck.title.toLowerCase().includes(q) ||
+        (deck.description && deck.description.toLowerCase().includes(q));
+
+      if (!matchesSearch) return false;
+
+      if (filterTab === "due") return deck.dueCardsCount > 0;
+      if (filterTab === "new") return deck.newCardsCount > 0;
+      return true;
+    });
+  }, [decks, searchQuery, filterTab]);
+
+  const decksWithDue = decks.filter((d) => d.dueCardsCount > 0);
 
   const handleCreateDeck = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +110,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Erro na importação");
+        throw new Error(data.error || "Erro na importa\u00e7\u00e3o");
       }
 
       alert("Baralho importado com sucesso!");
@@ -131,480 +143,558 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
   };
 
   return (
-    <div className="space-y-5 sm:space-y-8 pb-12">
-      {/* ═══════════ GAMIFICATION WIDGETS ═══════════ */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 sm:gap-4">
-        {/* Level & XP Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white/70 dark:bg-zinc-900/80 backdrop-blur-xl p-4 sm:p-6 border border-zinc-200 dark:border-zinc-800/80 shadow-xl transition-colors"
-        >
-          {/* Subtle glow */}
-          <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#0071e3]/10 rounded-full blur-[60px] pointer-events-none animate-glow-pulse" />
+    <div className="space-y-6 sm:space-y-8 pb-16">
+      {/* ═══════════ DASHBOARD OVERVIEW (COMMAND CENTER) ═══════════ */}
+      <section className="bg-white dark:bg-zinc-900/90 rounded-2xl sm:rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 sm:p-7 transition-colors">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {/* Left Column: Greeting & Summary */}
+          <div className="space-y-2 max-w-xl">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-500" />
+              <span>{"Sess\u00e3o de Estudo"}</span>
+            </div>
 
-          <div className="relative z-10 flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <motion.div
-                whileHover={{ scale: 1.08, rotate: 3 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-[#0071e3] to-cyan-400 flex items-center justify-center text-white font-black text-lg sm:text-2xl shadow-lg shadow-[#0071e3]/25 shrink-0"
-              >
-                {rankBadge}
-              </motion.div>
-              <div className="min-w-0">
-                <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-[#0071e3] flex items-center gap-1">
-                  <Trophy size={12} className="text-amber-500 dark:text-amber-400 shrink-0" /> {"N\u00edvel"} {level}
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-zinc-900 dark:text-zinc-50">
+              {totalDueAll > 0 ? (
+                <span>
+                  {"Voc\u00ea tem "}
+                  <span className="text-blue-600 dark:text-blue-400 underline decoration-blue-500/30 underline-offset-4">
+                    {totalDueAll} cards
+                  </span>
+                  {" para revisar hoje."}
                 </span>
-                <h3 className="text-sm sm:text-lg font-extrabold text-zinc-900 dark:text-white truncate transition-colors">
-                  {rankTitle}
-                </h3>
-              </div>
-            </div>
-
-            <div className="text-right shrink-0">
-              <span className="text-[10px] sm:text-xs text-zinc-500 font-semibold block">XP Total</span>
-              <span className="text-sm sm:text-lg font-black text-[#0071e3] dark:text-cyan-400 flex items-center justify-end gap-1 transition-colors">
-                <Star size={13} className="fill-current text-amber-500 dark:text-amber-400" /> {xp}
-              </span>
-            </div>
-          </div>
-
-          {/* XP Progress Bar */}
-          <div className="relative z-10 mt-4 space-y-1">
-            <div className="flex justify-between text-[10px] sm:text-xs font-semibold text-zinc-500">
-              <span>{"N\u00edvel"} {level + 1}</span>
-              <span>{levelProgress}%</span>
-            </div>
-            <div className="w-full h-2 sm:h-2.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden border border-zinc-300/40 dark:border-zinc-700/40 transition-colors">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#0071e3] via-cyan-400 to-emerald-400 shadow-[0_0_12px_rgba(0,113,227,0.4)]"
-                initial={{ width: 0 }}
-                animate={{ width: `${levelProgress}%` }}
-                transition={{ duration: 1.4, ease: [0.23, 1, 0.32, 1], delay: 0.3 }}
-              />
-            </div>
-            <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
-              {xpInCurrentLevel} / {xpNeededForLevel} XP para o {"pr\u00f3ximo n\u00edvel"}
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Streak + Stats Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1], delay: 0.1 }}
-          className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-white/70 dark:bg-zinc-900/80 backdrop-blur-xl p-4 sm:p-6 border border-zinc-200 dark:border-zinc-800/80 shadow-xl flex flex-col justify-between min-w-0 md:min-w-[200px] transition-colors"
-        >
-          <div>
-            <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-widest text-amber-500 dark:text-amber-400 flex items-center gap-1">
-              <Flame size={13} /> {"Const\u00e2ncia"}
-            </span>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white tabular-nums transition-colors">{streak}</span>
-              <span className="text-xs font-bold text-amber-600 dark:text-amber-400/80">{"dias \uD83D\uDD25"}</span>
-            </div>
-            <p className="text-[10px] sm:text-xs text-zinc-500 mt-1 leading-relaxed">
-              {"Estude diariamente para manter sua sequ\u00eancia!"}
-            </p>
-          </div>
-
-          <button
-            onClick={() => setIsAnalyticsOpen(true)}
-            className="mt-3 w-full py-2 sm:py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-300 rounded-xl transition-colors text-xs font-bold flex items-center justify-center gap-1.5 border border-amber-500/20 active:scale-95 touch-manipulation min-h-[40px]"
-          >
-            <BarChart3 size={14} /> {"Estat\u00edsticas"}
-          </button>
-        </motion.div>
-      </div>
-
-      {/* ═══════════ HERO BANNER ═══════════ */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.23, 1, 0.32, 1], delay: 0.15 }}
-        className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950 dark:from-zinc-900 dark:via-black dark:to-zinc-950 p-5 sm:p-8 lg:p-10 text-white shadow-2xl border border-white/10"
-      >
-        {/* Ambient blurs - Apple Intelligence style */}
-        <div className="absolute -top-24 -right-12 w-64 sm:w-96 h-64 sm:h-96 bg-gradient-to-br from-blue-500/30 to-purple-600/30 rounded-full blur-[80px] pointer-events-none animate-float-up" />
-        <div className="absolute -bottom-24 -left-12 w-64 sm:w-96 h-64 sm:h-96 bg-gradient-to-tr from-emerald-500/20 to-cyan-500/30 rounded-full blur-[80px] pointer-events-none animate-pulse" />
-        
-        {/* Subtle grid pattern over lay */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNykiLz48L3N2Zz4=')] opacity-50" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5 sm:gap-8">
-          <div className="space-y-2 sm:space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase">
-              <Sparkles size={12} className="text-blue-400 animate-pulse" />
-              <span className="text-zinc-300">SM-2 Spaced Repetition</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
-              Sua Central de Estudos
+              ) : (
+                <span>{"Tudo em dia! Nenhum card pendente."}</span>
+              )}
             </h1>
 
-            <p className="text-zinc-400 text-xs sm:text-sm font-medium leading-relaxed max-w-lg">
-              {"Sincroniza\u00e7\u00e3o em tempo real com Neon DB. Revise baralhos individuais ou estude "}
-              <span className="font-bold text-white">todos os cards pendentes</span>.
+            <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              {totalDueAll > 0
+                ? "Estudos distribu\u00eddos com o algoritmo de repeti\u00e7\u00e3o espa\u00e7ada SM-2 para reten\u00e7\u00e3o de longo prazo."
+                : "Voc\u00ea concluiu todas as revis\u00f5es agendadas. Aproveite para adicionar novos cards ou praticar baralhos espec\u00edficos."}
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 sm:gap-5 pt-3 text-[10px] sm:text-xs font-bold text-zinc-400">
-              <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-                <Layers size={14} className="text-blue-400" />
-                <span>{decks.length} Decks</span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-                <BookOpen size={14} className="text-purple-400" />
-                <span>{totalCardsAll} Cards</span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-                <Clock size={14} className="text-amber-400" />
-                <span>{totalDueAll} Pendentes</span>
-              </div>
+            {/* Quick Actions Row */}
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
+              <Link
+                href="/study/all"
+                className={`py-2.5 px-5 font-bold rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-sm transition-all active:scale-95 touch-manipulation min-h-[42px] ${
+                  totalDueAll > 0
+                    ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20"
+                    : "bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-white text-white dark:text-zinc-950"
+                }`}
+              >
+                <Play size={14} className="fill-current" />
+                <span>{totalDueAll > 0 ? `Estudar Todos (${totalDueAll})` : "Revisar Todos os Cards"}</span>
+              </Link>
+
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold rounded-xl text-xs sm:text-sm border border-zinc-200/80 dark:border-zinc-700/80 transition-all flex items-center gap-1.5 min-h-[42px] touch-manipulation"
+              >
+                <Plus size={15} />
+                <span>Novo Baralho</span>
+              </button>
+
+              <label className="py-2.5 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-semibold rounded-xl text-xs sm:text-sm border border-zinc-200/80 dark:border-zinc-700/80 transition-all flex items-center gap-1.5 min-h-[42px] touch-manipulation cursor-pointer">
+                {isImporting ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+                <span>{isImporting ? "Importando..." : "Importar .APKG"}</span>
+                <input
+                  type="file"
+                  accept=".apkg"
+                  className="hidden"
+                  onChange={handleImportApkg}
+                  disabled={isImporting}
+                />
+              </label>
+
+              <button
+                onClick={() => setIsAnalyticsOpen(true)}
+                className="py-2.5 px-4 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/40 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 font-medium rounded-xl text-xs sm:text-sm border border-zinc-200/50 dark:border-zinc-700/40 transition-all flex items-center gap-1.5 min-h-[42px] touch-manipulation"
+              >
+                <BarChart3 size={15} />
+                <span>{"M\u00e9tricas"}</span>
+              </button>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 sm:pt-0 shrink-0">
-            <Link
-              href="/study/all"
-              className="w-full sm:w-auto py-3.5 sm:py-4 px-6 bg-white text-zinc-950 hover:bg-zinc-100 font-extrabold rounded-xl sm:rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.15)] active:scale-95 transition-all flex items-center justify-center gap-2 text-sm min-h-[48px] touch-manipulation"
-            >
-              <Play size={16} className="fill-current" />
-              <span>Estudar Todos</span>
-            </Link>
+          {/* Right Column: Key Metric Strip (Human & Clean) */}
+          <div className="grid grid-cols-2 gap-3 w-full lg:w-[360px] shrink-0">
+            {/* Metric 1: Due Cards */}
+            <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/80">
+              <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-500 block">
+                Pendentes
+              </span>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-50 tabular-nums">
+                  {totalDueAll}
+                </span>
+                <span className="text-[11px] font-medium text-zinc-500">cards</span>
+              </div>
+            </div>
 
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="w-full sm:w-auto py-3.5 sm:py-4 px-6 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl sm:rounded-2xl backdrop-blur-xl border border-white/10 hover:border-white/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm min-h-[48px] touch-manipulation"
-            >
-              <Plus size={16} />
-              <span>Novo</span>
-            </button>
+            {/* Metric 2: Streak */}
+            <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/80">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                  {"Const\u00e2ncia"}
+                </span>
+                <Flame size={14} className="text-amber-500" />
+              </div>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
+                  {streak}
+                </span>
+                <span className="text-[11px] font-medium text-zinc-500">dias</span>
+              </div>
+            </div>
 
-            <label className="w-full sm:w-auto py-3.5 sm:py-4 px-6 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl sm:rounded-2xl backdrop-blur-xl border border-white/10 hover:border-white/20 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm min-h-[48px] touch-manipulation cursor-pointer">
-              {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-              <span>{isImporting ? "Importando..." : "Importar .APKG"}</span>
-              <input 
-                type="file" 
-                accept=".apkg" 
-                className="hidden" 
-                onChange={handleImportApkg} 
-                disabled={isImporting} 
-              />
-            </label>
+            {/* Metric 3: Level & XP */}
+            <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800/80 col-span-2">
+              <div className="flex items-center justify-between text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">{rankBadge}</span>
+                  <span className="font-bold text-zinc-900 dark:text-zinc-100">{rankTitle}</span>
+                  <span className="text-zinc-400 dark:text-zinc-500 text-[11px]">{"\u2022"} N\u00edvel {level}</span>
+                </div>
+                <span className="text-zinc-500 font-medium text-[11px] tabular-nums">{xp} XP</span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-700/60 rounded-full overflow-hidden mt-2.5">
+                <div
+                  className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-700"
+                  style={{ width: `${levelProgress}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[10px] text-zinc-500 mt-1">
+                <span>{xpInCurrentLevel} / {xpNeededForLevel} XP</span>
+                <span>{levelProgress}%</span>
+              </div>
+            </div>
           </div>
         </div>
-      </motion.div>
+      </section>
 
-      {/* ═══════════ DECK GRID ═══════════ */}
-      {decks.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center py-16 sm:py-24 text-center"
-        >
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center mb-4 text-3xl sm:text-4xl transition-colors">
-            {"\uD83D\uDCDA"}
+      {/* ═══════════ SEARCH & FILTER TOOLBAR ═══════════ */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-md">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar baralho por t\u00edtulo..."
+            className="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Filter Pills */}
+        <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl border border-zinc-200/60 dark:border-zinc-700/60 self-start sm:self-auto">
+          <button
+            onClick={() => setFilterTab("all")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              filterTab === "all"
+                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+            }`}
+          >
+            Todos ({decks.length})
+          </button>
+          <button
+            onClick={() => setFilterTab("due")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              filterTab === "due"
+                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+            }`}
+          >
+            Pendentes ({decksWithDue.length})
+          </button>
+          <button
+            onClick={() => setFilterTab("new")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              filterTab === "new"
+                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+            }`}
+          >
+            Novos
+          </button>
+        </div>
+      </div>
+
+      {/* ═══════════ DECKS GRID ═══════════ */}
+      {filteredDecks.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 p-12 text-center bg-white/50 dark:bg-zinc-900/30">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto mb-3 text-zinc-400">
+            <BookOpen size={20} />
           </div>
-          <h3 className="text-lg sm:text-xl font-bold text-zinc-800 dark:text-zinc-400 mb-1 transition-colors">Nenhum baralho ainda</h3>
-          <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-600 max-w-xs transition-colors">
-            {"Crie seu primeiro baralho para come\u00e7ar a estudar com repeti\u00e7\u00e3o espa\u00e7ada."}
+          <h3 className="text-base font-bold text-zinc-800 dark:text-zinc-200">
+            {searchQuery ? "Nenhum baralho encontrado" : "Nenhum baralho cadastrado"}
+          </h3>
+          <p className="text-xs text-zinc-500 max-w-sm mx-auto mt-1">
+            {searchQuery
+              ? `Nenhum resultado corresponde a "${searchQuery}". Tente outro termo ou limpe o filtro.`
+              : "Crie seu primeiro baralho ou importe um arquivo .apkg do Anki para come\u00e7ar."}
           </p>
-        </motion.div>
+          {searchQuery ? (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="mt-4 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-200"
+            >
+              Limpar busca
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700"
+            >
+              Criar Baralho
+            </button>
+          )}
+        </div>
       ) : (
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <AnimatePresence mode="popLayout">
-            {decks.map((deck) => (
-              <motion.div
-                key={deck.id}
-                layout
-                variants={cardVariants}
-                exit="exit"
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="group relative bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl border border-zinc-200 dark:border-zinc-800/80 rounded-2xl sm:rounded-3xl shadow-lg flex flex-col justify-between transition-colors hover:border-[#0071e3]/40 dark:hover:border-[#0071e3]/30 hover:shadow-[0_8px_30px_rgba(0,113,227,0.12)] overflow-hidden"
-              >
-                {deck.coverUrl && (
-                  <div className="absolute inset-0 top-0 h-32 w-full z-0 pointer-events-none">
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-white/70 dark:to-zinc-900/60 z-10" />
-                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white/70 dark:from-zinc-900/60 to-transparent z-10" />
-                    <img src={deck.coverUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {filteredDecks.map((deck) => (
+            <div
+              key={deck.id}
+              className="group bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200/90 dark:border-zinc-800 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200 flex flex-col justify-between overflow-hidden"
+            >
+              <div>
+                {/* Deck Card Cover or Header Banner */}
+                {deck.coverUrl ? (
+                  <div className="h-32 sm:h-36 w-full relative overflow-hidden bg-zinc-100 dark:bg-zinc-800 border-b border-zinc-200/80 dark:border-zinc-800">
+                    <img
+                      src={deck.coverUrl}
+                      alt={deck.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    {/* Icon Pill in bottom-left */}
+                    <div className="absolute left-3 bottom-3 px-2.5 py-1.5 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-xl text-lg shadow-sm border border-white/20">
+                      {deck.icon}
+                    </div>
+                    {/* Status Pill in top-right */}
+                    {deck.dueCardsCount > 0 ? (
+                      <span className="absolute right-3 top-3 px-2.5 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-full shadow-sm">
+                        {deck.dueCardsCount} para hoje
+                      </span>
+                    ) : (
+                      <span className="absolute right-3 top-3 px-2 py-0.5 bg-emerald-600/90 text-white text-[10px] font-semibold rounded-full shadow-sm">
+                        Em dia
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-4 sm:p-5 pb-0 flex items-start justify-between gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/70 dark:border-zinc-700/60 flex items-center justify-center text-2xl shadow-sm shrink-0">
+                      {deck.icon}
+                    </div>
+                    {deck.dueCardsCount > 0 ? (
+                      <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 text-[11px] font-bold rounded-full">
+                        {deck.dueCardsCount} para hoje
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[10px] font-semibold rounded-full">
+                        Em dia
+                      </span>
+                    )}
                   </div>
                 )}
-                
-                <div className="p-4 sm:p-6 relative z-10 flex flex-col h-full justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-3 sm:mb-4">
-                      <span className="text-xl sm:text-2xl p-2.5 sm:p-3 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md rounded-xl sm:rounded-2xl border border-zinc-200/50 dark:border-zinc-700/50 shadow-sm transition-colors">
-                        {deck.icon}
-                      </span>
 
-                    <div className="flex items-center gap-1.5">
-                      {deck.dueCardsCount > 0 && (
-                        <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] sm:text-[11px] font-bold rounded-full border border-emerald-200 dark:border-emerald-500/20 transition-colors">
-                          {deck.dueCardsCount} pendentes
-                        </span>
-                      )}
-                      <button
-                        onClick={() => setEditingDeck(deck)}
-                        className="p-2 text-zinc-400 hover:text-[#0071e3] dark:text-zinc-600 dark:hover:text-[#0071e3] hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center touch-manipulation"
-                        title="Editar Baralho"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteDeck(deck.id)}
-                        disabled={deletingId === deck.id}
-                        className="p-2 text-zinc-400 hover:text-rose-500 dark:text-zinc-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition min-w-[36px] min-h-[36px] flex items-center justify-center touch-manipulation"
-                        title="Apagar Baralho"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white group-hover:text-[#0071e3] transition-colors leading-snug">
+                {/* Deck Card Info */}
+                <div className="p-4 sm:p-5">
+                  <h3 className="font-bold text-base sm:text-lg text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
                     {deck.title}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-zinc-500 mt-1 line-clamp-2 leading-relaxed">
-                    {deck.description || "Sem descri\u00e7\u00e3o dispon\u00edvel."}
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-1.5 min-h-[32px] leading-relaxed">
+                    {deck.description || "Sem descri\u00e7\u00e3o fornecida."}
                   </p>
 
-                  <div className="flex items-center gap-2.5 mt-3 text-[10px] sm:text-[11px] text-zinc-500 font-medium">
-                    <span className="flex items-center gap-1">
+                  {/* Metadata Chips */}
+                  <div className="flex items-center gap-3 mt-4 text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                    <span className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
                       {deck.totalCards} cards
                     </span>
-                    <span className="text-zinc-300 dark:text-zinc-600 transition-colors">{"•"}</span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      {deck.newCardsCount} novos
-                    </span>
+                    <span className="text-zinc-300 dark:text-zinc-700">{"\u2022"}</span>
+                    <span>{deck.newCardsCount} novos</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-1.5 sm:gap-2 mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-zinc-100 dark:border-zinc-800/50 transition-colors">
-                  <Link
-                    href={`/study/${deck.id}`}
-                    className="flex-1 py-2.5 sm:py-3 bg-[#0071e3] hover:bg-[#005bb5] text-white text-xs sm:text-sm font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-md shadow-[#0071e3]/15 active:scale-95 touch-manipulation min-h-[44px]"
-                  >
-                    Estudar <ArrowRight size={14} />
-                  </Link>
+              {/* Action Buttons Footer */}
+              <div className="p-3 sm:p-4 pt-0 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center gap-1.5">
+                <Link
+                  href={`/study/${deck.id}`}
+                  className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95 touch-manipulation min-h-[38px]"
+                >
+                  <span>Estudar</span>
+                  <ArrowRight size={14} />
+                </Link>
 
-                  <a
-                    href={`/api/export-apkg?deckId=${deck.id}`}
-                    download
-                    className="p-2.5 sm:p-3 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500 text-emerald-600 dark:text-emerald-400 dark:hover:text-white rounded-xl transition border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center min-h-[44px] min-w-[44px] touch-manipulation"
-                    title="Exportar .APKG"
-                  >
-                    <Download size={15} />
-                  </a>
+                <button
+                  onClick={() => {
+                    setSelectedDeckId(deck.id);
+                    setIsCardModalOpen(true);
+                  }}
+                  className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition min-w-[38px] min-h-[38px] flex items-center justify-center touch-manipulation"
+                  title="Adicionar Card"
+                >
+                  <Plus size={16} />
+                </button>
 
-                  <button
-                    onClick={() => {
-                      setSelectedDeckId(deck.id);
-                      setIsCardModalOpen(true);
-                    }}
-                    className="p-2.5 sm:p-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl transition border border-zinc-200 dark:border-zinc-700/40 flex items-center justify-center min-h-[44px] min-w-[44px] touch-manipulation"
-                    title="Adicionar Card"
-                  >
-                    <Plus size={15} />
-                  </button>
-                </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+                <button
+                  onClick={() => setEditingDeck(deck)}
+                  className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition min-w-[38px] min-h-[38px] flex items-center justify-center touch-manipulation"
+                  title="Editar Baralho"
+                >
+                  <Pencil size={15} />
+                </button>
+
+                <a
+                  href={`/api/export-apkg?deckId=${deck.id}`}
+                  download
+                  className="p-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition min-w-[38px] min-h-[38px] flex items-center justify-center touch-manipulation"
+                  title="Exportar .APKG"
+                >
+                  <Download size={15} />
+                </a>
+
+                <button
+                  onClick={() => handleDeleteDeck(deck.id)}
+                  disabled={deletingId === deck.id}
+                  className="p-2 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition min-w-[38px] min-h-[38px] flex items-center justify-center touch-manipulation disabled:opacity-50"
+                  title="Excluir Baralho"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
-      {/* ═══════════ MODAL: CRIAR DECK ═══════════ */}
+      {/* ═══════════ MODAL: CRIAR BARALHO ═══════════ */}
       <AnimatePresence>
         {isModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-lg z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity"
             onClick={() => setIsModalOpen(false)}
           >
             <motion.div
-               initial={{ y: "100%", opacity: 0.5 }}
-               animate={{ y: 0, opacity: 1 }}
-               exit={{ y: "100%", opacity: 0 }}
-               transition={{ type: "spring", damping: 30, stiffness: 300 }}
-               className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 w-full sm:max-w-md shadow-2xl safe-bottom transition-colors"
-               onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-xl transition-colors"
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* Mobile drag handle */}
-              <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4 sm:hidden transition-colors" />
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                  Criar Novo Baralho
+                </h2>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white mb-4 transition-colors">Criar Novo Baralho</h2>
-              <form onSubmit={handleCreateDeck} className="space-y-3 sm:space-y-4">
+              <form onSubmit={handleCreateDeck} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">{"\u00cdcone Emoji"}</label>
+                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"\u00cdcone (Emoji)"}
+                  </label>
                   <input
                     type="text"
                     value={icon}
                     onChange={(e) => setIcon(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white text-lg text-center font-medium focus:ring-2 focus:ring-[#0071e3] outline-none min-h-[48px] transition-colors"
+                    className="w-16 p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-center text-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">{`T\u00edtulo do Baralho`}</label>
+                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"T\u00edtulo do Baralho"}
+                  </label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder={"Ex: Medicina - Farmacologia"}
-                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none min-h-[48px] transition-colors"
+                    placeholder="Ex: Medicina - Farmacologia"
+                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">{`Descri\u00e7\u00e3o (Opcional)`}</label>
+                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"Descri\u00e7\u00e3o (Opcional)"}
+                  </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder={`Breve resumo do conte\u00fado deste deck`}
+                    placeholder="Breve resumo do conte\u00fado deste baralho"
                     rows={2}
-                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none resize-none transition-colors"
+                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">{`URL da Capa (Opcional)`}</label>
+                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"URL da Capa (Opcional)"}
+                  </label>
                   <input
                     type="url"
                     value={coverUrl}
                     onChange={(e) => setCoverUrl(e.target.value)}
-                    placeholder="https://exemplo.com/capa.jpg"
-                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none min-h-[48px] text-xs transition-colors"
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                   />
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2.5 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white font-semibold rounded-xl transition min-h-[48px] touch-manipulation"
+                    className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl text-xs transition"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-[#0071e3] text-white font-bold rounded-xl hover:bg-[#005bb5] transition min-h-[48px] touch-manipulation"
+                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-sm"
                   >
                     Criar Baralho
                   </button>
                 </div>
               </form>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* ═══════════ MODAL: CRIAR CARD ═══════════ */}
       <AnimatePresence>
         {isCardModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-lg z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity"
             onClick={() => setIsCardModalOpen(false)}
           >
             <motion.div
-              initial={{ y: "100%", opacity: 0.5 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 w-full sm:max-w-md shadow-2xl max-h-[90vh] overflow-y-auto safe-bottom transition-colors"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Mobile drag handle */}
-              <div className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4 sm:hidden transition-colors" />
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <ImageIcon size={18} className="text-blue-600" />
+                  Adicionar Flashcard
+                </h2>
+                <button
+                  onClick={() => setIsCardModalOpen(false)}
+                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
-              <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2 transition-colors">
-                <ImageIcon size={18} className="text-[#0071e3]" />
-                Adicionar Card
-              </h2>
-              <form onSubmit={handleCreateCard} className="space-y-3 sm:space-y-4">
+              <form onSubmit={handleCreateCard} className="space-y-4">
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">Frente (Pergunta)</label>
-                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-colors focus-within:ring-2 focus-within:ring-[#0071e3]">
+                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"Frente (Pergunta / T\u00f3pico)"}
+                  </label>
+                  <div className="rounded-xl border border-zinc-300 dark:border-zinc-700 overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
                     <RichToolbar textareaRef={frontRef} value={front} onChange={setFront} />
                     <textarea
                       ref={frontRef}
                       required
                       value={front}
                       onChange={(e) => setFront(e.target.value)}
-                      placeholder={`Qual a f\u00f3rmula da \u00e1gua?`}
+                      placeholder="Ex: O que \u00e9 repeti\u00e7\u00e3o espa\u00e7ada?"
                       rows={2}
-                      className="w-full p-3 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium outline-none resize-none transition-colors border-0"
+                      className="w-full p-3 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm outline-none resize-none"
                     />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">Verso (Resposta)</label>
-                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden transition-colors focus-within:ring-2 focus-within:ring-[#0071e3]">
+                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"Verso (Resposta / Conte\u00fado)"}
+                  </label>
+                  <div className="rounded-xl border border-zinc-300 dark:border-zinc-700 overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
                     <RichToolbar textareaRef={backRef} value={back} onChange={setBack} />
                     <textarea
                       ref={backRef}
                       required
                       value={back}
                       onChange={(e) => setBack(e.target.value)}
-                      placeholder={`H\u2082O - Composta por 2 Hidrog\u00eanios e 1 Oxig\u00eanio.`}
+                      placeholder="Ex: T\u00e9cnica de memoriza\u00e7\u00e3o baseada no aumento progressivo dos intervalos..."
                       rows={3}
-                      className="w-full p-3 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium outline-none resize-none transition-colors border-0"
+                      className="w-full p-3 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm outline-none resize-none"
                     />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">URL da Imagem (Opcional)</label>
+                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    URL da Imagem (Opcional)
+                  </label>
                   <input
                     type="url"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="https://exemplo.com/diagrama.jpg"
-                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none min-h-[48px] text-xs transition-colors"
+                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-[11px] sm:text-xs font-bold text-zinc-500 mb-1">{`Informa\u00e7\u00e3o Extra (Opcional)`}</label>
+                  <label className="block text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1.5">
+                    {"Informa\u00e7\u00e3o Extra / Dica (Opcional)"}
+                  </label>
                   <input
                     type="text"
                     value={extra}
                     onChange={(e) => setExtra(e.target.value)}
-                    placeholder={`Dica ou explica\u00e7\u00e3o detalhada`}
-                    className="w-full p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-900 dark:text-white font-medium focus:ring-2 focus:ring-[#0071e3] outline-none min-h-[48px] transition-colors"
+                    placeholder="Ex: Conceito proposto por Hermann Ebbinghaus"
+                    className="w-full p-2.5 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800/80 text-zinc-900 dark:text-zinc-100 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
                   />
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2.5 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsCardModalOpen(false)}
-                    className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white font-semibold rounded-xl transition min-h-[48px] touch-manipulation"
+                    className="flex-1 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-semibold rounded-xl text-xs transition"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-[#0071e3] text-white font-bold rounded-xl hover:bg-[#005bb5] transition min-h-[48px] touch-manipulation"
+                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-sm"
                   >
                     Salvar Card
                   </button>
                 </div>
               </form>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

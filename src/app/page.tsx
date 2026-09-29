@@ -1,6 +1,7 @@
 import { getDecks, getUserProfile, seedDemoDeckIfEmpty } from "@/app/actions/flashcards";
 import DeckManager from "@/components/DeckManager";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Layers, Sparkles } from "lucide-react";
 
 export const revalidate = 0;
 
@@ -9,37 +10,46 @@ export default async function HomePage() {
   const decks = await getDecks();
   const userProfile = await getUserProfile();
 
-  return (
-    <main className="min-h-screen bg-background text-foreground antialiased transition-colors duration-300">
-      {/* Subtle ambient background glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-[#0071e3]/[0.08] dark:bg-[#0071e3]/[0.04] rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-purple-600/[0.05] dark:bg-purple-600/[0.03] rounded-full blur-[120px]" />
-      </div>
+  const totalCards = decks.reduce((acc, d) => acc + d.totalCards, 0);
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-        <header className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/60 pb-5 mb-6 sm:mb-10 transition-colors">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-[#0071e3] to-indigo-500 flex items-center justify-center text-white font-black text-lg sm:text-xl shadow-lg shadow-[#0071e3]/30 animate-gradient">
-              A
+  return (
+    <main className="min-h-screen bg-background text-foreground antialiased transition-colors duration-200">
+      {/* Top subtle border rule */}
+      <div className="border-b border-zinc-200/80 dark:border-zinc-800/80 bg-surface/80 backdrop-blur-md sticky top-0 z-30 transition-colors">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          {/* Logo & Brand */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-bold shadow-sm">
+              <Layers size={18} strokeWidth={2.2} />
             </div>
             <div>
-              <span className="font-extrabold text-lg sm:text-xl tracking-tight">Anki Pro</span>
-              <span className="ml-1.5 sm:ml-2 text-[10px] sm:text-xs font-semibold text-zinc-600 bg-zinc-200 dark:text-zinc-400 dark:bg-zinc-800/80 px-2 sm:px-2.5 py-0.5 rounded-full hidden xs:inline transition-colors">
-                Apple Edition
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-base tracking-tight text-zinc-900 dark:text-zinc-100">
+                  Recall
+                </span>
+                <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 px-2 py-0.5 rounded-md border border-zinc-200/60 dark:border-zinc-700/60 hidden sm:inline">
+                  {"Repeti\u00e7\u00e3o Espa\u00e7ada"}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] sm:text-xs font-semibold text-zinc-600 dark:text-zinc-400 hidden xs:inline">Neon DB</span>
+          {/* Quick Header Actions */}
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100/80 dark:bg-zinc-800/60 border border-zinc-200/50 dark:border-zinc-700/40">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>{decks.length} {"baralhos"}</span>
+              <span className="text-zinc-300 dark:text-zinc-600">{"\u2022"}</span>
+              <span>{totalCards} cards</span>
             </div>
+
             <ThemeToggle />
           </div>
-        </header>
+        </div>
+      </div>
 
+      {/* Main Workspace */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <DeckManager decks={decks} userProfile={userProfile} />
       </div>
     </main>
