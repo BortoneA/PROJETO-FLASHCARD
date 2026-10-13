@@ -272,6 +272,94 @@ export async function getRetentionAnalytics() {
   };
 }
 
+export async function getActivityHeatmap() {
+  const monthsAgo = new Date();
+  monthsAgo.setDate(monthsAgo.getDate() - 150); // últimos ~5 meses para caber perfeitamente no grid
+
+  const logs = await db.reviewLog.findMany({
+    where: {
+      reviewedAt: {
+        gte: monthsAgo,
+      },
+    },
+    select: {
+      reviewedAt: true,
+      rating: true,
+    },
+  });
+
+  const dateMap: Record<string, { count: number; goodCount: number }> = {};
+  logs.forEach((log) => {
+    const dateStr = log.reviewedAt.toISOString().split("T")[0];
+    if (!dateMap[dateStr]) {
+      dateMap[dateStr] = { count: 0, goodCount: 0 };
+    }
+    dateMap[dateStr].count++;
+    if (log.rating >= 3) {
+      dateMap[dateStr].goodCount++;
+    }
+  });
+
+  return dateMap;
+}
+
+export async function getDailyGoalProgress() {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const todayReviews = await db.reviewLog.count({
+    where: {
+      reviewedAt: {
+        gte: startOfDay,
+      },
+    },
+  });
+
+  return { todayReviews };
+}
+
+export async function purchaseShopItem(cost: number) {
+  const profile = await db.userProfile.findUnique({
+    where: { id: "default_user" },
+  });
+
+  if (!profile || profile.xp < cost) {
+    throw new Error("Saldo de XP insuficiente");
+  }
+
+  const updated = await db.userProfile.update({
+    where: { id: "default_user" },
+    data: {
+      xp: profile.xp - cost,
+    },
+  });
+
+  revalidatePath("/");
+  return updated;
+}
+
+export async function submitSpeedRunSession(cardsAnswered: number, correctCount: number, bonusXp: number) {
+  const profile = await db.userProfile.findUnique({
+    where: { id: "default_user" },
+  });
+
+  if (!profile) return null;
+
+  const newXp = profile.xp + bonusXp;
+  const newLevelInfo = getLevelDetails(newXp);
+
+  const updated = await db.userProfile.update({
+    where: { id: "default_user" },
+    data: {
+      xp: newXp,
+      level: newLevelInfo.level,
+    },
+  });
+
+  revalidatePath("/");
+  return { updated, bonusXp };
+}
+
 export async function seedDemoDeckIfEmpty() {
   const count = await db.deck.count();
   if (count > 0) return;

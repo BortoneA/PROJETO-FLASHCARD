@@ -1,32 +1,65 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
 import RichToolbar from "./RichToolbar";
 import DeckEditModal from "./DeckEditModal";
 import Mascot from "./Mascot";
+import ActivityHeatmap from "./ActivityHeatmap";
+import SpeedRunModal from "./SpeedRunModal";
+import XpShopModal from "./XpShopModal";
 import {
   Plus, ArrowRight, Download, Trash2, Play,
   BookOpen, Flame, Gem, Crown, BarChart3,
   Image as ImageIcon, Upload, Loader2, Pencil,
-  Search, X, CheckCircle2, Sparkles
+  Search, X, CheckCircle2, Sparkles, Zap, ShoppingBag
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import AnalyticsModal from "./AnalyticsModal";
 import { useRouter } from "next/navigation";
 
-export default function DeckManager({ decks, userProfile }: { decks: any[]; userProfile: any }) {
+interface DeckManagerProps {
+  decks: any[];
+  userProfile: any;
+  activityData?: Record<string, { count: number; goodCount: number }>;
+  todayReviews?: number;
+}
+
+export default function DeckManager({
+  decks,
+  userProfile,
+  activityData = {},
+  todayReviews = 0,
+}: DeckManagerProps) {
   const router = useRouter();
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+  const [isSpeedRunOpen, setIsSpeedRunOpen] = useState(false);
+  const [isShopOpen, setIsShopOpen] = useState(false);
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [editingDeck, setEditingDeck] = useState<any | null>(null);
+
+  // Gamification & Skin state
+  const [hasGoldenCrown, setHasGoldenCrown] = useState(false);
+  const [currentXp, setCurrentXp] = useState(userProfile?.xp || 0);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setHasGoldenCrown(localStorage.getItem("duo_golden_crown") === "true");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (userProfile?.xp !== undefined) {
+      setCurrentXp(userProfile.xp);
+    }
+  }, [userProfile?.xp]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -148,11 +181,12 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
       {/* ═══════════ DUOLINGO MASCOT COMMAND BANNER ═══════════ */}
       <section className="card-duo bg-white dark:bg-[#18191c] p-5 sm:p-7 shadow-sm transition-colors">
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-          {/* Mascot with Dynamic Mood */}
+          {/* Mascot with Dynamic Mood & Golden Crown */}
           <div className="shrink-0 flex flex-col items-center">
             <Mascot
               size={110}
               mood={totalDueAll === 0 ? "cheering" : streak >= 3 ? "fire" : "happy"}
+              hasGoldenCrown={hasGoldenCrown}
               className="hover:scale-105 transition-transform"
             />
           </div>
@@ -164,8 +198,8 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
               <div className="hidden md:block absolute -left-3 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[12px] border-r-[#bcf096] dark:border-r-[#28353d] border-b-[8px] border-b-transparent" />
               <div className="hidden md:block absolute -left-2 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[11px] border-r-[#f0f9eb] dark:border-r-[#182228] border-b-[8px] border-b-transparent" />
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex-1">
                   <span className="text-[11px] font-black uppercase tracking-wider text-[#46a302] dark:text-[#58cc02] flex items-center gap-1.5 mb-1">
                     <Sparkles size={14} />
                     {totalDueAll > 0 ? "Miss\u00e3o do Dia" : "Miss\u00e3o Cumprida!"}
@@ -189,13 +223,74 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                       : "Excelente trabalho! Revise baralhos livres ou crie novos cards para sua pr\u00f3xima meta."}
                   </p>
                 </div>
+
+                {/* Duolingo Daily Goal Circular Ring */}
+                {(() => {
+                  const dailyGoalTarget = 15;
+                  const currentTodayReviews = todayReviews || 0;
+                  const dailyGoalPercent = Math.min(
+                    100,
+                    Math.round((currentTodayReviews / dailyGoalTarget) * 100)
+                  );
+                  return (
+                    <div className="flex items-center gap-3.5 bg-white dark:bg-[#131f24] p-3 sm:p-3.5 rounded-2xl border-2 border-[#bcf096] dark:border-[#28353d] shrink-0 self-start lg:self-auto shadow-sm">
+                      <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
+                          <circle
+                            cx="22"
+                            cy="22"
+                            r="17"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="4.5"
+                            className="text-zinc-200 dark:text-[#28353d]"
+                          />
+                          <circle
+                            cx="22"
+                            cy="22"
+                            r="17"
+                            fill="none"
+                            stroke={currentTodayReviews >= dailyGoalTarget ? "#58cc02" : "#1cb0f6"}
+                            strokeWidth="4.5"
+                            strokeDasharray={2 * Math.PI * 17}
+                            strokeDashoffset={2 * Math.PI * 17 * (1 - dailyGoalPercent / 100)}
+                            strokeLinecap="round"
+                            className="transition-all duration-500"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          {currentTodayReviews >= dailyGoalTarget ? (
+                            <CheckCircle2 size={20} className="text-[#58cc02]" strokeWidth={3} />
+                          ) : (
+                            <span className="text-[11px] font-black text-zinc-800 dark:text-zinc-100">
+                              {dailyGoalPercent}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
+                          Meta Di\u00e1ria
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white">
+                          {currentTodayReviews} / {dailyGoalTarget} cards
+                        </span>
+                        <span className="text-[10px] font-bold text-[#58cc02] block">
+                          {currentTodayReviews >= dailyGoalTarget
+                            ? "Meta Batida! \uD83C\uDFAF"
+                            : `Faltam ${Math.max(0, dailyGoalTarget - currentTodayReviews)} cards`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Action Buttons Row with 3D Duolingo buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-5 border-t border-[#d8f5be] dark:border-[#28353d]/80 mt-4">
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-5 border-t border-[#d8f5be] dark:border-[#28353d]/80 mt-4">
                 <Link
                   href="/study/all"
-                  className={`btn-duo-green px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center gap-2 shadow-sm ${
+                  className={`btn-duo-green px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 shadow-sm ${
                     totalDueAll === 0 ? "opacity-90" : ""
                   }`}
                 >
@@ -204,14 +299,32 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
                 </Link>
 
                 <button
+                  onClick={() => setIsSpeedRunOpen(true)}
+                  className="btn-duo-orange px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
+                  title="Desafio Rel\u00e2mpago 60 segundos"
+                >
+                  <Zap size={16} className="fill-current" />
+                  <span>Desafio 60s</span>
+                </button>
+
+                <button
+                  onClick={() => setIsShopOpen(true)}
+                  className="btn-duo-purple px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
+                  title="Loja de Recompensas de XP"
+                >
+                  <ShoppingBag size={16} strokeWidth={2.5} />
+                  <span>Loja XP</span>
+                </button>
+
+                <button
                   onClick={() => setIsModalOpen(true)}
-                  className="btn-duo-white px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
+                  className="btn-duo-white px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
                 >
                   <Plus size={16} strokeWidth={3} />
                   <span>Novo Baralho</span>
                 </button>
 
-                <label className="btn-duo-white px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 cursor-pointer">
+                <label className="btn-duo-white px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 cursor-pointer">
                   {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} strokeWidth={2.5} />}
                   <span>{isImporting ? "Importando..." : "Importar .APKG"}</span>
                   <input
@@ -225,7 +338,7 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
                 <button
                   onClick={() => setIsAnalyticsOpen(true)}
-                  className="btn-duo-blue px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
+                  className="btn-duo-blue px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
                 >
                   <BarChart3 size={16} strokeWidth={2.5} />
                   <span>Conquistas</span>
@@ -298,6 +411,9 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
           </div>
         </div>
       </section>
+
+      {/* ═══════════ DUOLINGO ACTIVITY HEATMAP ═══════════ */}
+      <ActivityHeatmap activityData={activityData} />
 
       {/* ═══════════ SEARCH & FILTER TOOLBAR ═══════════ */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -719,6 +835,23 @@ export default function DeckManager({ decks, userProfile }: { decks: any[]; user
 
       {/* ═══════════ ANALYTICS MODAL ═══════════ */}
       <AnalyticsModal isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} />
+
+      {/* ═══════════ SPEED RUN MODAL ═══════════ */}
+      <SpeedRunModal
+        isOpen={isSpeedRunOpen}
+        onClose={() => setIsSpeedRunOpen(false)}
+        decks={decks}
+        onSessionComplete={() => router.refresh()}
+      />
+
+      {/* ═══════════ XP SHOP MODAL ═══════════ */}
+      <XpShopModal
+        isOpen={isShopOpen}
+        onClose={() => setIsShopOpen(false)}
+        currentXp={currentXp}
+        onXpChange={(newXp) => setCurrentXp(newXp)}
+        onCrownUnlocked={() => setHasGoldenCrown(true)}
+      />
 
       {/* ═══════════ EDIT DECK MODAL ═══════════ */}
       {editingDeck && (

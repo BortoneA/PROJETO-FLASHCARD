@@ -1,22 +1,61 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { sound } from "@/lib/sound";
+
 interface MascotProps {
   size?: number;
   mood?: "happy" | "cheering" | "thinking" | "fire";
   className?: string;
+  hasGoldenCrown?: boolean;
 }
 
-export default function Mascot({ size = 80, mood = "happy", className = "" }: MascotProps) {
+export default function Mascot({
+  size = 80,
+  mood = "happy",
+  className = "",
+  hasGoldenCrown = false,
+}: MascotProps) {
+  const [isBlinking, setIsBlinking] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Piscar de olhos sutil e orgânico a cada 3 a 6 segundos
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    const scheduleBlink = () => {
+      const delay = Math.random() * 3000 + 3000;
+      timeout = setTimeout(() => {
+        setIsBlinking(true);
+        setTimeout(() => {
+          setIsBlinking(false);
+          scheduleBlink();
+        }, 160);
+      }, delay);
+    };
+
+    scheduleBlink();
+    return () => clearTimeout(timeout);
+  }, []);
+
+  const activeMood = isHovered ? "cheering" : mood;
+
   return (
     <div
-      className={`relative inline-flex items-center justify-center select-none ${className}`}
+      className={`relative inline-flex items-center justify-center select-none cursor-pointer group transition-transform duration-200 active:scale-95 ${className}`}
       style={{ width: size, height: size }}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        sound.playClick();
+      }}
+      onMouseLeave={() => setIsHovered(false)}
+      title="Coruja Duocards!"
     >
       <svg
         viewBox="0 0 100 100"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="w-full h-full drop-shadow-md"
+        className="w-full h-full drop-shadow-md transition-transform duration-200 group-hover:scale-105"
       >
         {/* Feet */}
         <ellipse cx="38" cy="88" rx="9" ry="5" fill="#e58700" />
@@ -47,22 +86,24 @@ export default function Mascot({ size = 80, mood = "happy", className = "" }: Ma
           fill="none"
         />
 
-        {/* Wings */}
-        {mood === "cheering" ? (
+        {/* Wings with animated flutter on hover */}
+        {activeMood === "cheering" ? (
           <>
-            {/* Left wing raised */}
+            {/* Left wing raised high */}
             <path
               d="M16 48 C10 32 18 20 25 30 C27 34 26 46 22 52 Z"
               fill="#46a302"
+              className="animate-pulse"
             />
             <path
               d="M18 47 C13 33 20 22 26 31 C28 35 27 45 23 51 Z"
               fill="#58cc02"
             />
-            {/* Right wing raised */}
+            {/* Right wing raised high */}
             <path
               d="M84 48 C90 32 82 20 75 30 C73 34 74 46 78 52 Z"
               fill="#46a302"
+              className="animate-pulse"
             />
             <path
               d="M82 47 C87 33 80 22 74 31 C72 35 73 45 77 51 Z"
@@ -85,19 +126,25 @@ export default function Mascot({ size = 80, mood = "happy", className = "" }: Ma
         <circle cx="63" cy="40" r="14" fill="#46a302" />
         <circle cx="63" cy="39" r="13" fill="#ffffff" />
 
-        {/* Pupils */}
-        {mood === "cheering" ? (
+        {/* Pupils & Eye Expressions */}
+        {isBlinking ? (
+          /* Closed eye lines on blink */
           <>
-            {/* Happy arch eyes ^^ */}
+            <line x1="28" y1="39" x2="46" y2="39" stroke="#2e3842" strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="54" y1="39" x2="72" y2="39" stroke="#2e3842" strokeWidth="3.5" strokeLinecap="round" />
+          </>
+        ) : activeMood === "cheering" ? (
+          /* Happy curved smiling eyes ^^ */
+          <>
             <path
-              d="M30 40 Q37 32 44 40"
+              d="M30 40 Q37 31 44 40"
               stroke="#2e3842"
               strokeWidth="4"
               strokeLinecap="round"
               fill="none"
             />
             <path
-              d="M56 40 Q63 32 70 40"
+              d="M56 40 Q63 31 70 40"
               stroke="#2e3842"
               strokeWidth="4"
               strokeLinecap="round"
@@ -105,8 +152,8 @@ export default function Mascot({ size = 80, mood = "happy", className = "" }: Ma
             />
           </>
         ) : (
+          /* Big lively round pupils with catchlight */
           <>
-            {/* Big cute round pupils with catchlight */}
             <circle cx="40" cy="39" r="7.5" fill="#2e3842" />
             <circle cx="42" cy="37" r="2.5" fill="#ffffff" />
             <circle cx="60" cy="39" r="7.5" fill="#2e3842" />
@@ -120,11 +167,11 @@ export default function Mascot({ size = 80, mood = "happy", className = "" }: Ma
         <polygon points="50,56 43,49 57,49" fill="#ffc800" />
 
         {/* Cheeks blush */}
-        <ellipse cx="23" cy="46" rx="4" ry="2.5" fill="#ff7da7" opacity="0.6" />
-        <ellipse cx="77" cy="46" rx="4" ry="2.5" fill="#ff7da7" opacity="0.6" />
+        <ellipse cx="23" cy="46" rx="4" ry="2.5" fill="#ff7da7" opacity="0.65" />
+        <ellipse cx="77" cy="46" rx="4" ry="2.5" fill="#ff7da7" opacity="0.65" />
 
-        {/* Optional Fire Crown for streak */}
-        {mood === "fire" && (
+        {/* Streak Flame Aura */}
+        {activeMood === "fire" && !hasGoldenCrown && (
           <g transform="translate(38, 2) scale(0.65)">
             <path
               d="M18 2 C18 10 24 16 26 22 C30 18 30 12 30 8 C34 14 36 22 34 28 C40 24 42 16 40 10 C46 16 48 26 44 32 C48 30 50 26 50 22 C52 30 48 38 42 42 C34 48 22 48 14 42 C6 36 8 24 12 18 C14 24 16 26 18 24 Z"
@@ -135,6 +182,25 @@ export default function Mascot({ size = 80, mood = "happy", className = "" }: Ma
               fill="#ff9600"
             />
             <circle cx="28" cy="34" r="8" fill="#ffc800" />
+          </g>
+        )}
+
+        {/* Golden Royal Crown (Skin especial da Loja XP) */}
+        {hasGoldenCrown && (
+          <g transform="translate(35, 4) scale(0.7)">
+            <path
+              d="M6 24 L10 6 L22 16 L34 6 L38 24 Z"
+              fill="#e58700"
+            />
+            <path
+              d="M7 23 L11 7 L22 16 L33 7 L37 23 Z"
+              fill="#ffd700"
+            />
+            <circle cx="11" cy="6" r="2.5" fill="#ff4b4b" />
+            <circle cx="22" cy="15" r="2.5" fill="#1cb0f6" />
+            <circle cx="33" cy="6" r="2.5" fill="#ff4b4b" />
+            <rect x="7" y="21" width="30" height="4" rx="2" fill="#e58700" />
+            <rect x="7" y="20" width="30" height="3" rx="1.5" fill="#ffea79" />
           </g>
         )}
       </svg>

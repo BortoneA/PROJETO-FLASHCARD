@@ -1,6 +1,13 @@
-import { getDecks, getUserProfile, seedDemoDeckIfEmpty } from "@/app/actions/flashcards";
+import {
+  getDecks,
+  getUserProfile,
+  seedDemoDeckIfEmpty,
+  getActivityHeatmap,
+  getDailyGoalProgress,
+} from "@/app/actions/flashcards";
 import DeckManager from "@/components/DeckManager";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SoundToggle } from "@/components/SoundToggle";
 import Mascot from "@/components/Mascot";
 import { Flame, Gem, Crown } from "lucide-react";
 
@@ -10,6 +17,8 @@ export default async function HomePage() {
   await seedDemoDeckIfEmpty();
   const decks = await getDecks();
   const userProfile = await getUserProfile();
+  const activityData = await getActivityHeatmap();
+  const { todayReviews } = await getDailyGoalProgress();
 
   const totalCards = decks.reduce((acc, d) => acc + d.totalCards, 0);
   const streak = userProfile?.streak || 1;
@@ -63,6 +72,7 @@ export default async function HomePage() {
               <span>{level}</span>
             </div>
 
+            <SoundToggle />
             <ThemeToggle />
           </div>
         </div>
@@ -70,7 +80,12 @@ export default async function HomePage() {
 
       {/* Main Workspace */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <DeckManager decks={decks} userProfile={userProfile} />
+        <DeckManager
+          decks={decks}
+          userProfile={userProfile}
+          activityData={activityData}
+          todayReviews={todayReviews}
+        />
       </div>
     </main>
   );

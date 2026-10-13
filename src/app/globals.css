@@ -71,6 +71,20 @@
     border-bottom-width: 1px;
   }
 
+  .btn-duo-purple {
+    background-color: #a855f7;
+    border-bottom: 4px solid #9333ea;
+    color: #ffffff;
+    transition: transform 0.08s ease, border-bottom-width 0.08s ease, background-color 0.1s ease;
+  }
+  .btn-duo-purple:hover {
+    background-color: #b975f9;
+  }
+  .btn-duo-purple:active {
+    transform: translateY(3px);
+    border-bottom-width: 1px;
+  }
+
   .btn-duo-white {
     background-color: #ffffff;
     border: 2px solid #e5e5e5;

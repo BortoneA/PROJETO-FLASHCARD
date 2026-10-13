@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { submitCardReview } from "@/app/actions/flashcards";
+import { sound } from "@/lib/sound";
+import { triggerConfetti, triggerStarBurst } from "@/lib/confetti";
+import { speakText } from "@/lib/tts";
 import {
   X, Flame, Gem, Star, Trophy, RotateCcw,
-  Sparkles, CheckCircle2, ChevronRight
+  Sparkles, CheckCircle2, ChevronRight, Volume2,
+  Keyboard, Check, HelpCircle
 } from "lucide-react";
-import confetti from "canvas-confetti";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -50,6 +53,17 @@ export default function FlashcardDeck({
   const [streak, setStreak] = useState(0);
   const [completedCount, setCompletedCount] = useState(0);
 
+  // Type-in Answer Mode State
+  const [isTypeMode, setIsTypeMode] = useState(false);
+  const [typedAnswer, setTypedAnswer] = useState("");
+  const [hasSubmittedTyped, setHasSubmittedTyped] = useState(false);
+
+  // Text-to-Speech State
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Drag Gesture State
+  const [dragOffset, setDragOffset] = useState(0);
+
   const [floatingXp, setFloatingXp] = useState<number | null>(null);
   const [levelUpModal, setLevelUpModal] = useState<{ level: number; title: string } | null>(null);
 
@@ -57,17 +71,46 @@ export default function FlashcardDeck({
   const totalCards = cards.length;
   const progress = totalCards > 0 ? (currentIndex / totalCards) * 100 : 0;
 
+  // Sound & Confetti on lesson completion
+  const hasTriggeredEndRef = useRef(false);
+  useEffect(() => {
+    if (cards.length > 0 && currentIndex >= cards.length && !hasTriggeredEndRef.current) {
+      hasTriggeredEndRef.current = true;
+      sound.playLevelUp();
+      triggerConfetti({ count: 90 });
+    }
+  }, [currentIndex, cards.length]);
+
+  // Handle TTS
+  const handleSpeak = (text: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    sound.playClick();
+    setIsSpeaking(true);
+    speakText(
+      text,
+      undefined,
+      () => setIsSpeaking(true),
+      () => setIsSpeaking(false)
+    );
+  };
+
+  const handleFlip = useCallback(() => {
+    sound.playFlip();
+    setIsFlipped((prev) => !prev);
+  }, []);
+
   const handleAnswer = useCallback(async (rating: 1 | 2 | 3 | 4) => {
     if (!currentCard || isSyncing) return;
 
     setIsSyncing(true);
 
-    if (rating === 4 || rating === 3) {
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.75 },
-      });
+    if (rating >= 3) {
+      sound.playSuccess(rating);
+      if (rating === 4) {
+        triggerConfetti({ count: 50, origin: { y: 0.75 } });
+      }
+    } else {
+      sound.playError();
     }
 
     try {
@@ -79,11 +122,8 @@ export default function FlashcardDeck({
       }
 
       if (res?.didLevelUp) {
-        confetti({
-          particleCount: 100,
-          spread: 80,
-          origin: { y: 0.5 },
-        });
+        sound.playLevelUp();
+        triggerStarBurst();
         setLevelUpModal({ level: res.newLevel, title: res.newTitle });
       }
     } catch (err) {
@@ -93,10 +133,21 @@ export default function FlashcardDeck({
     }
 
     setCompletedCount((prev) => prev + 1);
-    if (rating >= 3) setStreak((prev) => prev + 1);
-    else setStreak(0);
+    if (rating >= 3) {
+      setStreak((prev) => {
+        const next = prev + 1;
+        if (next >= 3 && next % 3 === 0) sound.playStreak();
+        return next;
+      });
+    } else {
+      setStreak(0);
+    }
 
+    // Reset card state for next card
     setIsFlipped(false);
+    setTypedAnswer("");
+    setHasSubmittedTyped(false);
+    setDragOffset(0);
 
     if (currentIndex < cards.length - 1) {
       setCurrentIndex((prev) => prev + 1);
@@ -105,11 +156,30 @@ export default function FlashcardDeck({
     }
   }, [currentCard, isSyncing, currentIndex, cards.length]);
 
+  // Type answer verification
+  const handleVerifyTyped = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!typedAnswer.trim()) return;
+    setHasSubmittedTyped(true);
+    sound.playFlip();
+    setIsFlipped(true);
+  };
+
+  // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // If typing in input, let default typing happen
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        if (e.code === "Enter" && isTypeMode && !hasSubmittedTyped) {
+          e.preventDefault();
+          handleVerifyTyped();
+        }
+        return;
+      }
+
       if (e.code === "Space") {
         e.preventDefault();
-        setIsFlipped((prev) => !prev);
+        handleFlip();
       } else if (isFlipped && ["Digit1", "Digit2", "Digit3", "Digit4"].includes(e.code)) {
         const ratingMap: Record<string, 1 | 2 | 3 | 4> = {
           Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4,
@@ -119,7 +189,7 @@ export default function FlashcardDeck({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFlipped, handleAnswer]);
+  }, [isFlipped, handleAnswer, handleFlip, isTypeMode, hasSubmittedTyped, typedAnswer]);
 
   // ═══════════ COMPLETION SCREEN (DUOLINGO LESSON COMPLETE) ═══════════
   if (!currentCard || cards.length === 0 || currentIndex >= cards.length) {
@@ -186,6 +256,11 @@ export default function FlashcardDeck({
     );
   }
 
+  // Answer match calculation for Type Mode
+  const isExactTypedMatch =
+    hasSubmittedTyped &&
+    typedAnswer.trim().toLowerCase() === currentCard.back.trim().toLowerCase();
+
   // ═══════════ DUOLINGO STUDY VIEW ═══════════
   return (
     <div className="max-w-xl mx-auto px-4 py-4 sm:py-6 flex flex-col items-center relative min-h-screen">
@@ -239,7 +314,7 @@ export default function FlashcardDeck({
       </AnimatePresence>
 
       {/* ═══════════ TOP LESSON BAR (DUOLINGO STYLE) ═══════════ */}
-      <div className="w-full flex items-center gap-3 sm:gap-4 mb-5">
+      <div className="w-full flex items-center gap-3 sm:gap-4 mb-3">
         {/* Close Button ✕ */}
         <Link
           href="/"
@@ -269,73 +344,215 @@ export default function FlashcardDeck({
         )}
       </div>
 
-      {/* ═══════════ FLASHCARD EXERCISE TILE ═══════════ */}
-      <div
-        className="w-full cursor-pointer select-none mb-6 touch-manipulation perspective-1000"
-        onClick={() => setIsFlipped((prev) => !prev)}
-      >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${currentCard.id}-${isFlipped ? "back" : "front"}`}
-            initial={{ rotateY: isFlipped ? -45 : 45, opacity: 0 }}
-            animate={{ rotateY: 0, opacity: 1 }}
-            exit={{ rotateY: isFlipped ? 45 : -45, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="card-duo w-full min-h-[320px] sm:min-h-[380px] p-6 sm:p-8 bg-white dark:bg-[#182228] border-2 border-zinc-200 dark:border-[#28353d] flex flex-col items-center justify-center text-center shadow-md transition-colors"
-          >
-            {/* Card Image */}
-            {currentCard.imageUrl && (
-              <div className="mb-4 max-h-36 sm:max-h-44 rounded-2xl overflow-hidden border-2 border-zinc-200 dark:border-[#28353d]">
-                <img
-                  src={currentCard.imageUrl}
-                  alt="Anexo"
-                  className="h-full w-auto object-cover max-h-36 sm:max-h-44"
-                />
-              </div>
+      {/* Top Utility Bar: Mode Toggle & Instructions */}
+      <div className="w-full flex items-center justify-between gap-2 mb-4 px-1">
+        <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
+          Card {currentIndex + 1} de {totalCards}
+        </span>
+
+        {/* Type Mode Toggle Button */}
+        <button
+          onClick={() => {
+            sound.playClick();
+            setIsTypeMode((prev) => !prev);
+          }}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black transition-all ${
+            isTypeMode
+              ? "bg-[#1cb0f6] text-white shadow-sm border-b-2 border-[#1899d6]"
+              : "btn-duo-white text-zinc-500 dark:text-zinc-400"
+          }`}
+          title="Modo de Digita\u00e7\u00e3o"
+        >
+          <Keyboard size={14} strokeWidth={2.5} />
+          <span>Modo Digitação {isTypeMode ? "Ativo" : "Off"}</span>
+        </button>
+      </div>
+
+      {/* ═══════════ FLASHCARD EXERCISE TILE WITH GESTURE SWIPE ═══════════ */}
+      <div className="w-full relative mb-6 touch-manipulation perspective-1000">
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.65}
+          onDrag={(e, info) => setDragOffset(info.offset.x)}
+          onDragEnd={(e, info) => {
+            if (info.offset.x > 110) {
+              if (!isFlipped) {
+                handleFlip();
+              } else {
+                handleAnswer(3); // Bom
+              }
+            } else if (info.offset.x < -110) {
+              if (!isFlipped) {
+                handleFlip();
+              } else {
+                handleAnswer(1); // Errei
+              }
+            }
+            setDragOffset(0);
+          }}
+          className="w-full cursor-grab active:cursor-grabbing select-none relative"
+        >
+          {/* Swipe Stamp Badges (Duolingo / Tinder style) */}
+          <AnimatePresence>
+            {dragOffset > 40 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: Math.min(1, (dragOffset - 30) / 60), scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute top-6 left-6 z-30 border-4 border-[#58cc02] text-[#58cc02] font-black uppercase text-xl sm:text-2xl px-4 py-1.5 rounded-2xl rotate-[-12deg] bg-white/90 dark:bg-[#182228]/90 shadow-xl pointer-events-none"
+              >
+                ACERTEI ✓
+              </motion.div>
             )}
 
-            {!isFlipped ? (
-              /* ─── FRONT (QUESTION) ─── */
-              <div className="flex flex-col items-center justify-center w-full py-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Mascot size={32} mood="happy" />
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#1cb0f6] bg-blue-50 dark:bg-blue-500/15 px-3 py-1 rounded-xl border-2 border-blue-200 dark:border-blue-500/30">
-                    Pergunta
-                  </span>
-                </div>
+            {dragOffset < -40 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: Math.min(1, (-dragOffset - 30) / 60), scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute top-6 right-6 z-30 border-4 border-[#ff4b4b] text-[#ff4b4b] font-black uppercase text-xl sm:text-2xl px-4 py-1.5 rounded-2xl rotate-[12deg] bg-white/90 dark:bg-[#182228]/90 shadow-xl pointer-events-none"
+              >
+                ERREI ✕
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                <div className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-relaxed break-words max-w-full prose-card">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.front}</ReactMarkdown>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${currentCard.id}-${isFlipped ? "back" : "front"}`}
+              initial={{ rotateY: isFlipped ? -45 : 45, opacity: 0 }}
+              animate={{ rotateY: 0, opacity: 1 }}
+              exit={{ rotateY: isFlipped ? 45 : -45, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={!isTypeMode || isFlipped ? handleFlip : undefined}
+              className="card-duo w-full min-h-[340px] sm:min-h-[400px] p-6 sm:p-8 bg-white dark:bg-[#182228] border-2 border-zinc-200 dark:border-[#28353d] flex flex-col items-center justify-between text-center shadow-md transition-colors relative"
+            >
+              {/* Card Image */}
+              {currentCard.imageUrl && (
+                <div className="mb-4 max-h-36 sm:max-h-44 rounded-2xl overflow-hidden border-2 border-zinc-200 dark:border-[#28353d]">
+                  <img
+                    src={currentCard.imageUrl}
+                    alt="Anexo"
+                    className="h-full w-auto object-cover max-h-36 sm:max-h-44"
+                  />
                 </div>
+              )}
 
-                <p className="text-xs font-black text-zinc-400 dark:text-zinc-500 mt-8 flex items-center gap-1.5 uppercase tracking-wider">
-                  <RotateCcw size={13} strokeWidth={2.5} />
-                  <span>Toque para ver a resposta</span>
-                </p>
-              </div>
-            ) : (
-              /* ─── BACK (ANSWER) ─── */
-              <div className="flex flex-col items-center justify-center w-full py-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <Mascot size={32} mood="cheering" />
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#58cc02] bg-emerald-50 dark:bg-emerald-500/15 px-3 py-1 rounded-xl border-2 border-emerald-200 dark:border-emerald-500/30">
-                    Resposta
-                  </span>
-                </div>
+              {!isFlipped ? (
+                /* ─── FRONT (QUESTION) ─── */
+                <div className="flex flex-col items-center justify-center w-full py-2 flex-1">
+                  <div className="flex items-center justify-between w-full mb-3">
+                    <div className="flex items-center gap-2">
+                      <Mascot size={32} mood="happy" />
+                      <span className="text-[11px] font-black uppercase tracking-wider text-[#1cb0f6] bg-blue-50 dark:bg-blue-500/15 px-3 py-1 rounded-xl border-2 border-blue-200 dark:border-blue-500/30">
+                        Pergunta
+                      </span>
+                    </div>
 
-                <div className="text-lg sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-relaxed mb-4 break-words max-w-full prose-card">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.back}</ReactMarkdown>
-                </div>
-
-                {currentCard.extra && (
-                  <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-[#131f24] p-4 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] max-w-sm w-full prose-card text-left mt-2">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.extra}</ReactMarkdown>
+                    {/* Pronunciation TTS Button */}
+                    <button
+                      onClick={(e) => handleSpeak(currentCard.front, e)}
+                      className={`p-2.5 rounded-2xl btn-duo-white text-zinc-500 hover:text-[#1cb0f6] transition-colors ${
+                        isSpeaking ? "animate-pulse border-[#1cb0f6] text-[#1cb0f6]" : ""
+                      }`}
+                      title="Ouvir pron\u00fancia"
+                    >
+                      <Volume2 size={18} strokeWidth={2.5} />
+                    </button>
                   </div>
-                )}
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+
+                  <div className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-relaxed break-words max-w-full prose-card my-auto">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.front}</ReactMarkdown>
+                  </div>
+
+                  {/* Type Mode Input (Optional) */}
+                  {isTypeMode && (
+                    <div
+                      className="w-full mt-4"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <form onSubmit={handleVerifyTyped} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={typedAnswer}
+                          onChange={(e) => setTypedAnswer(e.target.value)}
+                          placeholder="Digite sua resposta aqui..."
+                          className="flex-1 p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-zinc-50 dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-bold focus:border-[#58cc02] outline-none"
+                          autoFocus
+                        />
+                        <button
+                          type="submit"
+                          className="btn-duo-green px-4 py-2 rounded-2xl font-black text-xs uppercase"
+                        >
+                          Checar
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
+                  <p className="text-xs font-black text-zinc-400 dark:text-zinc-500 mt-6 flex items-center gap-1.5 uppercase tracking-wider">
+                    <RotateCcw size={13} strokeWidth={2.5} />
+                    <span>Toque ou deslize para ver a resposta</span>
+                  </p>
+                </div>
+              ) : (
+                /* ─── BACK (ANSWER) ─── */
+                <div className="flex flex-col items-center justify-center w-full py-2 flex-1">
+                  <div className="flex items-center justify-between w-full mb-3">
+                    <div className="flex items-center gap-2">
+                      <Mascot size={32} mood="cheering" />
+                      <span className="text-[11px] font-black uppercase tracking-wider text-[#58cc02] bg-emerald-50 dark:bg-emerald-500/15 px-3 py-1 rounded-xl border-2 border-emerald-200 dark:border-emerald-500/30">
+                        Resposta
+                      </span>
+                    </div>
+
+                    {/* Pronunciation TTS Button for Answer */}
+                    <button
+                      onClick={(e) => handleSpeak(currentCard.back, e)}
+                      className={`p-2.5 rounded-2xl btn-duo-white text-zinc-500 hover:text-[#58cc02] transition-colors ${
+                        isSpeaking ? "animate-pulse border-[#58cc02] text-[#58cc02]" : ""
+                      }`}
+                      title="Ouvir pron\u00fancia da resposta"
+                    >
+                      <Volume2 size={18} strokeWidth={2.5} />
+                    </button>
+                  </div>
+
+                  {/* Type Comparison Feedback if user typed */}
+                  {isTypeMode && hasSubmittedTyped && (
+                    <div
+                      className={`w-full p-3 mb-3 rounded-2xl border-2 text-xs font-bold text-left ${
+                        isExactTypedMatch
+                          ? "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-300 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+                          : "bg-amber-50 dark:bg-amber-500/15 border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300"
+                      }`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <span className="block text-[10px] font-black uppercase opacity-75">
+                        {isExactTypedMatch ? "Acertou em cheio! 🎯" : "Sua Digitação:"}
+                      </span>
+                      <span className="text-sm font-black">{typedAnswer || "(vazio)"}</span>
+                    </div>
+                  )}
+
+                  <div className="text-lg sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-relaxed mb-3 break-words max-w-full prose-card my-auto">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.back}</ReactMarkdown>
+                  </div>
+
+                  {currentCard.extra && (
+                    <div
+                      className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-[#131f24] p-3.5 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] max-w-sm w-full prose-card text-left mt-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.extra}</ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
       </div>
 
       {/* ═══════════ 3D DUOLINGO GRADING BUTTONS ═══════════ */}
@@ -357,7 +574,7 @@ export default function FlashcardDeck({
           </div>
         ) : (
           <button
-            onClick={() => setIsFlipped(true)}
+            onClick={handleFlip}
             className="w-full btn-duo-green py-4 rounded-2xl font-black text-sm sm:text-base uppercase tracking-wider shadow-md flex items-center justify-center gap-2"
           >
             <span>Mostrar Resposta</span>
