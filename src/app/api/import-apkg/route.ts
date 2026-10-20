@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import initSqlJs from "sql.js";
+import { getSqlJs } from "@/lib/sqlite";
 import JSZip from "jszip";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -205,7 +205,7 @@ export async function POST(request: Request) {
 
     // ═══════════ ABRIR SQLITE ═══════════
     const sqliteBuffer = await collectionFile.async("uint8array");
-    const SQL = await initSqlJs();
+    const SQL = await getSqlJs();
     let sqliteDb: InstanceType<typeof SQL.Database>;
     try {
       sqliteDb = new SQL.Database(sqliteBuffer);

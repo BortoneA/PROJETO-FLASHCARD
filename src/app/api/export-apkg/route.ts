@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
-import initSqlJs from "sql.js";
+import { getSqlJs } from "@/lib/sqlite";
 import JSZip from "jszip";
 
 export async function GET(request: Request) {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   }
 
   // Inicializa o motor SQLite em WebAssembly / Node
-  const SQL = await initSqlJs();
+  const SQL = await getSqlJs();
   const sqliteDb = new SQL.Database();
 
   // Cria a estrutura do banco Anki (collection.anki2)
