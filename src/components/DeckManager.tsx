@@ -8,6 +8,8 @@ import Mascot from "./Mascot";
 import ActivityHeatmap from "./ActivityHeatmap";
 import SpeedRunModal from "./SpeedRunModal";
 import XpShopModal from "./XpShopModal";
+import { sound } from "@/lib/sound";
+import { triggerConfetti } from "@/lib/confetti";
 import {
   Plus, ArrowRight, Download, Trash2, Play,
   BookOpen, Flame, Gem, Crown, BarChart3,
@@ -43,7 +45,13 @@ export default function DeckManager({
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [importingDeckId, setImportingDeckId] = useState<string | null>(null);
   const [editingDeck, setEditingDeck] = useState<any | null>(null);
+  const [importResult, setImportResult] = useState<{
+    decks: { title: string; importedCards: number; skippedDuplicates: number }[];
+    totalImported: number;
+    totalSkipped: number;
+  } | null>(null);
 
   // Gamification & Skin state
   const [hasGoldenCrown, setHasGoldenCrown] = useState(false);
@@ -128,16 +136,23 @@ export default function DeckManager({
     setIsModalOpen(false);
   };
 
-  const handleImportApkg = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportApkg = async (e: React.ChangeEvent<HTMLInputElement>, targetDeckId?: string) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setIsImporting(true);
+      if (targetDeckId) setImportingDeckId(targetDeckId);
+
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("/api/import-apkg", {
+      const mode = targetDeckId ? "merge" : "new";
+      const url = targetDeckId
+        ? `/api/import-apkg?mode=${mode}&deckId=${targetDeckId}`
+        : `/api/import-apkg?mode=${mode}`;
+
+      const res = await fetch(url, {
         method: "POST",
         body: formData,
       });
@@ -147,12 +162,22 @@ export default function DeckManager({
         throw new Error(data.error || "Erro na importa\u00e7\u00e3o");
       }
 
-      alert("Baralho importado com sucesso!");
+      const data = await res.json();
+      setImportResult({
+        decks: data.decks || [],
+        totalImported: data.totalImported || 0,
+        totalSkipped: data.totalSkipped || 0,
+      });
+
+      sound.playSuccess(4);
+      triggerConfetti({ count: 65 });
+
       router.refresh();
     } catch (err: any) {
       alert(err.message);
     } finally {
       setIsImporting(false);
+      setImportingDeckId(null);
       e.target.value = "";
     }
   };
@@ -325,13 +350,13 @@ export default function DeckManager({
                 </button>
 
                 <label className="btn-duo-white px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 cursor-pointer">
-                  {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} strokeWidth={2.5} />}
-                  <span>{isImporting ? "Importando..." : "Importar .APKG"}</span>
+                  {isImporting && !importingDeckId ? <Loader2 size={16} className="animate-spin text-[#58cc02]" /> : <Upload size={16} strokeWidth={2.5} />}
+                  <span>{isImporting && !importingDeckId ? "Importando..." : "Importar .APKG"}</span>
                   <input
                     type="file"
                     accept=".apkg"
                     className="hidden"
-                    onChange={handleImportApkg}
+                    onChange={(e) => handleImportApkg(e)}
                     disabled={isImporting}
                   />
                 </label>
@@ -581,10 +606,31 @@ export default function DeckManager({
                     setIsCardModalOpen(true);
                   }}
                   className="btn-duo-white p-2 rounded-xl flex items-center justify-center"
-                  title="Adicionar Card"
+                  title="Adicionar Card Manualmente"
                 >
                   <Plus size={16} strokeWidth={3} />
                 </button>
+
+                {/* Somar cards com .APKG diretamente neste baralho */}
+                <label
+                  className={`btn-duo-white p-2 rounded-xl flex items-center justify-center cursor-pointer ${
+                    isImporting && importingDeckId === deck.id ? "opacity-60 pointer-events-none" : ""
+                  }`}
+                  title="Somar cards importando .APKG neste baralho"
+                >
+                  {isImporting && importingDeckId === deck.id ? (
+                    <Loader2 size={15} className="animate-spin text-[#58cc02]" />
+                  ) : (
+                    <Upload size={15} strokeWidth={2.5} />
+                  )}
+                  <input
+                    type="file"
+                    accept=".apkg"
+                    className="hidden"
+                    onChange={(e) => handleImportApkg(e, deck.id)}
+                    disabled={isImporting}
+                  />
+                </label>
 
                 <button
                   onClick={() => setEditingDeck(deck)}
@@ -861,6 +907,84 @@ export default function DeckManager({
           onClose={() => setEditingDeck(null)}
         />
       )}
+
+      {/* ═══════════ MODAL: RESULTADO DA IMPORTAÇÃO APKG ═══════════ */}
+      <AnimatePresence>
+        {importResult && (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity"
+            onClick={() => setImportResult(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="card-duo bg-white dark:bg-[#182228] p-6 sm:p-7 w-full max-w-md shadow-2xl text-center transition-colors border-2 border-zinc-200 dark:border-[#28353d]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-center mb-3">
+                <Mascot size={90} mood="cheering" />
+              </div>
+
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#58cc02] bg-emerald-50 dark:bg-emerald-500/15 px-3 py-1 rounded-xl border border-emerald-300 dark:border-emerald-500/30">
+                {"Importa\u00e7\u00e3o Conclu\u00edda!"}
+              </span>
+
+              <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white mt-2 mb-1">
+                {importResult.totalImported > 0
+                  ? `+${importResult.totalImported} Cards Adicionados!`
+                  : "Nenhum Card Novo"}
+              </h2>
+
+              <p className="text-xs sm:text-sm font-semibold text-zinc-600 dark:text-zinc-400 mb-4">
+                {"Seus flashcards foram processados com o leitor nativo do Anki e est\u00e3o prontos para estudo."}
+              </p>
+
+              {/* Summary stats */}
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <div className="card-duo bg-zinc-50 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] p-3 text-center">
+                  <span className="text-[10px] text-zinc-500 font-black uppercase block">
+                    Adicionados
+                  </span>
+                  <span className="text-lg font-black text-[#58cc02]">
+                    +{importResult.totalImported}
+                  </span>
+                </div>
+                <div className="card-duo bg-zinc-50 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] p-3 text-center">
+                  <span className="text-[10px] text-zinc-500 font-black uppercase block">
+                    {"Duplicatas Ignoradas"}
+                  </span>
+                  <span className="text-lg font-black text-amber-500">
+                    {importResult.totalSkipped}
+                  </span>
+                </div>
+              </div>
+
+              {/* List of affected decks */}
+              {importResult.decks.length > 0 && (
+                <div className="text-left bg-zinc-50 dark:bg-[#131f24] p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] max-h-36 overflow-y-auto mb-5 space-y-2">
+                  <span className="text-[10px] font-black uppercase text-zinc-400 block">
+                    {"Baralhos Atualizados:"}
+                  </span>
+                  {importResult.decks.map((d, idx) => (
+                    <div key={idx} className="flex justify-between items-center text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                      <span className="truncate pr-2">{d.title}</span>
+                      <span className="text-[#58cc02] shrink-0 font-black">+{d.importedCards} cards</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                onClick={() => setImportResult(null)}
+                className="w-full btn-duo-green py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider shadow-sm"
+              >
+                Continuar
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
