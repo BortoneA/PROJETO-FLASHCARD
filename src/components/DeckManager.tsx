@@ -14,7 +14,8 @@ import {
   Plus, ArrowRight, Download, Trash2, Play,
   BookOpen, Flame, Gem, Crown, BarChart3,
   Image as ImageIcon, Upload, Loader2, Pencil,
-  Search, X, CheckCircle2, Sparkles, Zap, ShoppingBag
+  Search, X, CheckCircle2, Sparkles, Zap, ShoppingBag,
+  MoreVertical, ChevronDown, ChevronUp
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,6 +48,8 @@ export default function DeckManager({
   const [isImporting, setIsImporting] = useState(false);
   const [importingDeckId, setImportingDeckId] = useState<string | null>(null);
   const [editingDeck, setEditingDeck] = useState<any | null>(null);
+  const [activeMenuDeckId, setActiveMenuDeckId] = useState<string | null>(null);
+  const [showHeatmap, setShowHeatmap] = useState(false);
   const [importResult, setImportResult] = useState<{
     decks: { title: string; importedCards: number; skippedDuplicates: number }[];
     totalImported: number;
@@ -68,6 +71,27 @@ export default function DeckManager({
       setCurrentXp(userProfile.xp);
     }
   }, [userProfile?.xp]);
+
+  // Close card action menus on outside click or Escape
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-deck-menu]")) {
+        setActiveMenuDeckId(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveMenuDeckId(null);
+      }
+    };
+    window.addEventListener("click", handleGlobalClick);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -205,12 +229,12 @@ export default function DeckManager({
   return (
     <div className="space-y-6 sm:space-y-8 pb-16">
       {/* ═══════════ DUOLINGO MASCOT COMMAND BANNER ═══════════ */}
-      <section className="card-duo bg-white dark:bg-[#18191c] p-5 sm:p-7 shadow-sm transition-colors">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+      <section className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-6 shadow-sm transition-colors">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
           {/* Mascot with Dynamic Mood & Golden Crown */}
           <div className="shrink-0 flex flex-col items-center">
             <Mascot
-              size={110}
+              size={85}
               mood={totalDueAll === 0 ? "cheering" : streak >= 3 ? "fire" : "happy"}
               hasGoldenCrown={hasGoldenCrown}
               className="hover:scale-105 transition-transform"
@@ -219,38 +243,40 @@ export default function DeckManager({
 
           {/* Duolingo Speech Bubble */}
           <div className="flex-1 w-full relative">
-            <div className="bg-[#f0f9eb] dark:bg-[#182228] border-2 border-[#bcf096] dark:border-[#28353d] rounded-3xl p-5 sm:p-6 relative shadow-sm">
+            <div className="bg-[#f0f9eb] dark:bg-[#182228] border-2 border-[#bcf096] dark:border-[#28353d] rounded-3xl p-4 sm:p-5 relative shadow-sm">
               {/* Speech bubble pointer triangle */}
-              <div className="hidden md:block absolute -left-3 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[12px] border-r-[#bcf096] dark:border-r-[#28353d] border-b-[8px] border-b-transparent" />
-              <div className="hidden md:block absolute -left-2 top-7 w-0 h-0 border-t-[8px] border-t-transparent border-r-[11px] border-r-[#f0f9eb] dark:border-r-[#182228] border-b-[8px] border-b-transparent" />
+              <div className="hidden sm:block absolute -left-3 top-6 w-0 h-0 border-t-[8px] border-t-transparent border-r-[12px] border-r-[#bcf096] dark:border-r-[#28353d] border-b-[8px] border-b-transparent" />
+              <div className="hidden sm:block absolute -left-2 top-6 w-0 h-0 border-t-[8px] border-t-transparent border-r-[11px] border-r-[#f0f9eb] dark:border-r-[#182228] border-b-[8px] border-b-transparent" />
 
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div className="flex-1">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-[#46a302] dark:text-[#58cc02] flex items-center gap-1.5 mb-1">
-                    <Sparkles size={14} />
-                    {totalDueAll > 0 ? "Miss\u00e3o do Dia" : "Miss\u00e3o Cumprida!"}
-                  </span>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-[#46a302] dark:text-[#58cc02] flex items-center gap-1.5">
+                      <Sparkles size={14} />
+                      {totalDueAll > 0 ? "Missão do Dia" : "Missão Cumprida!"}
+                    </span>
+                  </div>
 
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-zinc-900 dark:text-white tracking-tight">
+                  <h1 className="text-lg sm:text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
                     {totalDueAll > 0 ? (
                       <span>
-                        {"Voc\u00ea tem "}
+                        {"Você tem "}
                         <span className="text-[#58cc02]">{totalDueAll} cards</span>
                         {" para praticar hoje!"}
                       </span>
                     ) : (
-                      <span>{"Tudo em dia! Voc\u00ea \u00e9 impar\u00e1vel! \uD83C\uDF89"}</span>
+                      <span>{"Tudo em dia! Você é imparável! 🎉"}</span>
                     )}
                   </h1>
 
-                  <p className="text-xs sm:text-sm font-semibold text-zinc-600 dark:text-zinc-300 mt-1 leading-relaxed">
+                  <p className="text-xs sm:text-sm font-semibold text-zinc-600 dark:text-zinc-400 mt-0.5">
                     {totalDueAll > 0
-                      ? "Apenas 5 minutinhos para turbinar sua mem\u00f3ria e manter seu streak aceso!"
-                      : "Excelente trabalho! Revise baralhos livres ou crie novos cards para sua pr\u00f3xima meta."}
+                      ? "Apenas 5 minutinhos para turbinar sua memória e manter seu streak aceso!"
+                      : "Excelente trabalho! Revise baralhos livres ou crie novos cards para sua meta."}
                   </p>
                 </div>
 
-                {/* Duolingo Daily Goal Circular Ring */}
+                {/* Duolingo Daily Goal Mini-Pill */}
                 {(() => {
                   const dailyGoalTarget = 15;
                   const currentTodayReviews = todayReviews || 0;
@@ -259,52 +285,45 @@ export default function DeckManager({
                     Math.round((currentTodayReviews / dailyGoalTarget) * 100)
                   );
                   return (
-                    <div className="flex items-center gap-3.5 bg-white dark:bg-[#131f24] p-3 sm:p-3.5 rounded-2xl border-2 border-[#bcf096] dark:border-[#28353d] shrink-0 self-start lg:self-auto shadow-sm">
-                      <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
+                    <div className="flex items-center gap-3 bg-white dark:bg-[#131f24] px-3.5 py-2.5 rounded-2xl border-2 border-[#bcf096] dark:border-[#28353d] shrink-0 self-start md:self-auto shadow-sm">
+                      <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                           <circle
-                            cx="22"
-                            cy="22"
-                            r="17"
+                            cx="18"
+                            cy="18"
+                            r="14"
                             fill="none"
                             stroke="currentColor"
-                            strokeWidth="4.5"
+                            strokeWidth="3.5"
                             className="text-zinc-200 dark:text-[#28353d]"
                           />
                           <circle
-                            cx="22"
-                            cy="22"
-                            r="17"
+                            cx="18"
+                            cy="18"
+                            r="14"
                             fill="none"
                             stroke={currentTodayReviews >= dailyGoalTarget ? "#58cc02" : "#1cb0f6"}
-                            strokeWidth="4.5"
-                            strokeDasharray={2 * Math.PI * 17}
-                            strokeDashoffset={2 * Math.PI * 17 * (1 - dailyGoalPercent / 100)}
+                            strokeWidth="3.5"
+                            strokeDasharray={2 * Math.PI * 14}
+                            strokeDashoffset={2 * Math.PI * 14 * (1 - dailyGoalPercent / 100)}
                             strokeLinecap="round"
                             className="transition-all duration-500"
                           />
                         </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-zinc-800 dark:text-zinc-100">
                           {currentTodayReviews >= dailyGoalTarget ? (
-                            <CheckCircle2 size={20} className="text-[#58cc02]" strokeWidth={3} />
+                            <CheckCircle2 size={16} className="text-[#58cc02]" strokeWidth={3} />
                           ) : (
-                            <span className="text-[11px] font-black text-zinc-800 dark:text-zinc-100">
-                              {dailyGoalPercent}%
-                            </span>
+                            `${dailyGoalPercent}%`
                           )}
                         </div>
                       </div>
                       <div>
                         <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
-                          Meta Di\u00e1ria
+                          Meta Diária
                         </span>
-                        <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white">
-                          {currentTodayReviews} / {dailyGoalTarget} cards
-                        </span>
-                        <span className="text-[10px] font-bold text-[#58cc02] block">
-                          {currentTodayReviews >= dailyGoalTarget
-                            ? "Meta Batida! \uD83C\uDFAF"
-                            : `Faltam ${Math.max(0, dailyGoalTarget - currentTodayReviews)} cards`}
+                        <span className="text-xs font-black text-zinc-900 dark:text-white">
+                          {currentTodayReviews}/{dailyGoalTarget} cards
                         </span>
                       </div>
                     </div>
@@ -312,46 +331,32 @@ export default function DeckManager({
                 })()}
               </div>
 
-              {/* Action Buttons Row with 3D Duolingo buttons */}
-              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-5 border-t border-[#d8f5be] dark:border-[#28353d]/80 mt-4">
+              {/* Action Buttons Toolbar with Duolingo 3D Tactile Buttons */}
+              <div className="flex flex-wrap items-center gap-2 pt-3 sm:pt-4 border-t border-[#d8f5be] dark:border-[#28353d]/80 mt-3 sm:mt-4">
                 <Link
                   href="/study/all"
-                  className={`btn-duo-green px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 shadow-sm ${
+                  className={`btn-duo-green px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm ${
                     totalDueAll === 0 ? "opacity-90" : ""
                   }`}
                 >
-                  <Play size={16} className="fill-current" />
+                  <Play size={15} className="fill-current" />
                   <span>{totalDueAll > 0 ? `Praticar Tudo (${totalDueAll})` : "Praticar Livremente"}</span>
                 </Link>
 
                 <button
-                  onClick={() => setIsSpeedRunOpen(true)}
-                  className="btn-duo-orange px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
-                  title="Desafio Rel\u00e2mpago 60 segundos"
-                >
-                  <Zap size={16} className="fill-current" />
-                  <span>Desafio 60s</span>
-                </button>
-
-                <button
-                  onClick={() => setIsShopOpen(true)}
-                  className="btn-duo-purple px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
-                  title="Loja de Recompensas de XP"
-                >
-                  <ShoppingBag size={16} strokeWidth={2.5} />
-                  <span>Loja XP</span>
-                </button>
-
-                <button
                   onClick={() => setIsModalOpen(true)}
-                  className="btn-duo-white px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
+                  className="btn-duo-white px-3.5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5"
                 >
-                  <Plus size={16} strokeWidth={3} />
+                  <Plus size={15} strokeWidth={3} />
                   <span>Novo Baralho</span>
                 </button>
 
-                <label className="btn-duo-white px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 cursor-pointer">
-                  {isImporting && !importingDeckId ? <Loader2 size={16} className="animate-spin text-[#58cc02]" /> : <Upload size={16} strokeWidth={2.5} />}
+                <label className="btn-duo-white px-3.5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
+                  {isImporting && !importingDeckId ? (
+                    <Loader2 size={15} className="animate-spin text-[#58cc02]" />
+                  ) : (
+                    <Upload size={15} strokeWidth={2.5} />
+                  )}
                   <span>{isImporting && !importingDeckId ? "Importando..." : "Importar .APKG"}</span>
                   <input
                     type="file"
@@ -363,11 +368,30 @@ export default function DeckManager({
                 </label>
 
                 <button
-                  onClick={() => setIsAnalyticsOpen(true)}
-                  className="btn-duo-blue px-4 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2"
+                  onClick={() => setIsSpeedRunOpen(true)}
+                  className="btn-duo-orange px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5"
+                  title="Desafio Relâmpago 60 segundos"
                 >
-                  <BarChart3 size={16} strokeWidth={2.5} />
-                  <span>Conquistas</span>
+                  <Zap size={15} className="fill-current" />
+                  <span className="hidden xs:inline">Desafio 60s</span>
+                </button>
+
+                <button
+                  onClick={() => setIsShopOpen(true)}
+                  className="btn-duo-purple px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5"
+                  title="Loja de Recompensas de XP"
+                >
+                  <ShoppingBag size={15} strokeWidth={2.5} />
+                  <span className="hidden xs:inline">Loja XP</span>
+                </button>
+
+                <button
+                  onClick={() => setIsAnalyticsOpen(true)}
+                  className="btn-duo-blue px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5"
+                  title="Conquistas e Estatísticas"
+                >
+                  <BarChart3 size={15} strokeWidth={2.5} />
+                  <span className="hidden sm:inline">Conquistas</span>
                 </button>
               </div>
             </div>
@@ -375,99 +399,33 @@ export default function DeckManager({
         </div>
       </section>
 
-      {/* ═══════════ DUOLINGO 4-KPI TILES ═══════════ */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Tile 1: Due Cards */}
-        <div className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-500/15 border-2 border-blue-300 dark:border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xl shrink-0">
-            {totalDueAll}
-          </div>
-          <div>
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
-              Para Revisar
-            </span>
-            <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white">
-              {totalDueAll > 0 ? "Pendentes hoje" : "Zero pend\u00eancias"}
-            </span>
-          </div>
-        </div>
-
-        {/* Tile 2: Streak */}
-        <div className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-500/15 border-2 border-amber-300 dark:border-amber-500/30 flex items-center justify-center text-amber-500 dark:text-amber-400 font-black text-xl shrink-0">
-            <Flame size={24} className="fill-amber-500 animate-pulse" />
-          </div>
-          <div>
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
-              {"Const\u00e2ncia"}
-            </span>
-            <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white">
-              {streak} {streak === 1 ? "dia" : "dias"} seguidos!
-            </span>
-          </div>
-        </div>
-
-        {/* Tile 3: Gems / XP */}
-        <div className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-100 dark:bg-cyan-500/15 border-2 border-cyan-300 dark:border-cyan-500/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400 font-black text-xl shrink-0">
-            <Gem size={24} className="fill-cyan-500 text-cyan-500" />
-          </div>
-          <div>
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-600 dark:text-cyan-400 block">
-              Cristais de XP
-            </span>
-            <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white">
-              {xp} pontos
-            </span>
-          </div>
-        </div>
-
-        {/* Tile 4: Level & League */}
-        <div className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 flex items-center gap-3.5 shadow-sm">
-          <div className="w-12 h-12 rounded-2xl bg-yellow-100 dark:bg-yellow-500/15 border-2 border-yellow-300 dark:border-yellow-500/30 flex items-center justify-center text-yellow-600 dark:text-yellow-400 font-black text-xl shrink-0">
-            <Crown size={24} className="fill-yellow-500 text-yellow-500" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-yellow-600 dark:text-yellow-400 block">
-              Liga {level}
-            </span>
-            <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white truncate block">
-              {rankTitle}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ DUOLINGO ACTIVITY HEATMAP ═══════════ */}
-      <ActivityHeatmap activityData={activityData} />
-
       {/* ═══════════ SEARCH & FILTER TOOLBAR ═══════════ */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Chunky Search Input */}
         <div className="relative flex-1 max-w-md">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+          <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar baralho por t\u00edtulo..."
-            className="w-full pl-11 pr-10 py-3 bg-white dark:bg-[#182228] rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#58cc02] transition-colors"
+            placeholder="Buscar baralho por título..."
+            className="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-[#182228] rounded-xl border-2 border-zinc-200 dark:border-[#28353d] text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#58cc02] transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600"
             >
-              <X size={15} />
+              <X size={14} />
             </button>
           )}
         </div>
 
         {/* 3D Filter Tabs */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 self-start sm:self-auto">
           <button
             onClick={() => setFilterTab("all")}
-            className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
+            className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
               filterTab === "all"
                 ? "bg-[#58cc02] text-white border-b-4 border-[#46a302]"
                 : "btn-duo-white"
@@ -477,7 +435,7 @@ export default function DeckManager({
           </button>
           <button
             onClick={() => setFilterTab("due")}
-            className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
+            className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
               filterTab === "due"
                 ? "bg-[#1cb0f6] text-white border-b-4 border-[#1899d6]"
                 : "btn-duo-white"
@@ -487,7 +445,7 @@ export default function DeckManager({
           </button>
           <button
             onClick={() => setFilterTab("new")}
-            className={`px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
+            className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
               filterTab === "new"
                 ? "bg-[#ff9600] text-white border-b-4 border-[#e58700]"
                 : "btn-duo-white"
@@ -498,23 +456,23 @@ export default function DeckManager({
         </div>
       </div>
 
-      {/* ═══════════ DECKS GRID (DUOLINGO STAGE TILES) ═══════════ */}
+      {/* ═══════════ DECKS GRID (CLEAN, DUOLINGO STYLE) ═══════════ */}
       {filteredDecks.length === 0 ? (
-        <div className="card-duo bg-white dark:bg-[#182228] p-12 text-center">
-          <div className="w-16 h-16 rounded-3xl bg-zinc-100 dark:bg-[#202b33] border-2 border-zinc-200 dark:border-[#28353d] flex items-center justify-center mx-auto mb-3 text-3xl">
-            <BookOpen size={36} className="text-zinc-400 dark:text-zinc-400" strokeWidth={2.5} />
+        <div className="card-duo bg-white dark:bg-[#182228] p-10 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-[#202b33] border-2 border-zinc-200 dark:border-[#28353d] flex items-center justify-center mx-auto mb-3 text-3xl">
+            <BookOpen size={30} className="text-zinc-400" strokeWidth={2.5} />
           </div>
-          <h3 className="text-lg font-black text-zinc-800 dark:text-zinc-200">
+          <h3 className="text-base sm:text-lg font-black text-zinc-800 dark:text-zinc-200">
             {searchQuery ? "Nenhum baralho encontrado" : "Nenhum baralho criado ainda"}
           </h3>
           <p className="text-xs font-semibold text-zinc-500 max-w-sm mx-auto mt-1">
             {searchQuery
               ? `Nenhum resultado corresponde a "${searchQuery}".`
-              : "Crie seu primeiro baralho ou importe um arquivo .apkg do Anki para come\u00e7ar suas li\u00e7\u00f5es!"}
+              : "Crie seu primeiro baralho ou importe um arquivo .APKG do Anki para começar suas lições!"}
           </p>
           <button
             onClick={() => (searchQuery ? setSearchQuery("") : setIsModalOpen(true))}
-            className="btn-duo-green px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider mt-5"
+            className="btn-duo-green px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider mt-4"
           >
             {searchQuery ? "Limpar Busca" : "Criar Primeiro Baralho"}
           </button>
@@ -529,7 +487,7 @@ export default function DeckManager({
               <div>
                 {/* Deck Card Cover or Chunky Header */}
                 {deck.coverUrl ? (
-                  <div className="h-32 sm:h-36 w-full relative overflow-hidden bg-zinc-100 dark:bg-[#202b33] border-b-2 border-zinc-200 dark:border-[#28353d]">
+                  <div className="h-28 sm:h-32 w-full relative overflow-hidden bg-zinc-100 dark:bg-[#202b33] border-b-2 border-zinc-200 dark:border-[#28353d]">
                     <img
                       src={deck.coverUrl}
                       alt={deck.title}
@@ -537,31 +495,31 @@ export default function DeckManager({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                     {/* Icon Bubble */}
-                    <div className="absolute left-3.5 bottom-3 px-3 py-1.5 bg-white dark:bg-[#182228] rounded-2xl text-xl shadow-md border-2 border-zinc-200 dark:border-[#28353d]">
+                    <div className="absolute left-3 bottom-2.5 px-2.5 py-1 bg-white dark:bg-[#182228] rounded-xl text-lg shadow-md border-2 border-zinc-200 dark:border-[#28353d]">
                       {deck.icon}
                     </div>
                     {/* Status Badge */}
                     {deck.dueCardsCount > 0 ? (
-                      <span className="absolute right-3.5 top-3.5 px-3 py-1 bg-[#ff4b4b] border-b-2 border-[#ea2b2b] text-white text-[11px] font-black uppercase tracking-wider rounded-xl shadow-sm">
+                      <span className="absolute right-3 top-3 px-2.5 py-1 bg-[#ff4b4b] border-b-2 border-[#ea2b2b] text-white text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm">
                         {deck.dueCardsCount} para hoje
                       </span>
                     ) : (
-                      <span className="absolute right-3.5 top-3.5 px-3 py-1 bg-[#58cc02] border-b-2 border-[#46a302] text-white text-[11px] font-black uppercase tracking-wider rounded-xl shadow-sm">
+                      <span className="absolute right-3 top-3 px-2.5 py-1 bg-[#58cc02] border-b-2 border-[#46a302] text-white text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm">
                         Em dia!
                       </span>
                     )}
                   </div>
                 ) : (
                   <div className="p-4 sm:p-5 pb-0 flex items-start justify-between gap-3">
-                    <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-[#202b33] border-2 border-zinc-200 dark:border-[#28353d] flex items-center justify-center text-3xl shadow-sm shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-[#202b33] border-2 border-zinc-200 dark:border-[#28353d] flex items-center justify-center text-2xl shadow-sm shrink-0">
                       {deck.icon}
                     </div>
                     {deck.dueCardsCount > 0 ? (
-                      <span className="px-3 py-1.5 bg-rose-50 dark:bg-rose-500/15 border-2 border-rose-300 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-black uppercase tracking-wider rounded-xl">
+                      <span className="px-2.5 py-1 bg-rose-50 dark:bg-rose-500/15 border-2 border-rose-300 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-[11px] font-black uppercase tracking-wider rounded-xl">
                         {deck.dueCardsCount} para hoje
                       </span>
                     ) : (
-                      <span className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/15 border-2 border-emerald-300 dark:border-emerald-500/30 text-[#46a302] dark:text-[#58cc02] text-xs font-black uppercase tracking-wider rounded-xl">
+                      <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/15 border-2 border-emerald-300 dark:border-emerald-500/30 text-[#46a302] dark:text-[#58cc02] text-[11px] font-black uppercase tracking-wider rounded-xl">
                         Em dia
                       </span>
                     )}
@@ -570,35 +528,35 @@ export default function DeckManager({
 
                 {/* Deck Card Info */}
                 <div className="p-4 sm:p-5">
-                  <h3 className="font-black text-lg text-zinc-900 dark:text-zinc-100 leading-snug line-clamp-1">
+                  <h3 className="font-black text-base sm:text-lg text-zinc-900 dark:text-zinc-100 leading-snug line-clamp-1">
                     {deck.title}
                   </h3>
-                  <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 line-clamp-2 mt-1 min-h-[32px] leading-relaxed">
-                    {deck.description || "Pratique os cards deste baralho para dominar o conte\u00fado!"}
+                  <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 line-clamp-2 mt-1 min-h-[30px] leading-relaxed">
+                    {deck.description || "Pratique os cards deste baralho para dominar o conteúdo!"}
                   </p>
 
                   {/* Metadata Chips */}
-                  <div className="flex items-center gap-3 mt-4 text-[11px] font-bold text-zinc-500 dark:text-zinc-300">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-[#202b33]">
-                      <span className="w-2 h-2 rounded-full bg-[#1cb0f6]" />
+                  <div className="flex items-center gap-2 mt-3 text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-[#202b33]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#1cb0f6]" />
                       {deck.totalCards} cards
                     </span>
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-[#202b33]">
-                      <span className="w-2 h-2 rounded-full bg-[#58cc02]" />
+                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-[#202b33]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#58cc02]" />
                       {deck.newCardsCount} novos
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons Footer with Duolingo Buttons */}
-              <div className="p-3 sm:p-4 pt-0 border-t-2 border-zinc-100 dark:border-[#28353d]/80 flex items-center gap-2">
+              {/* Action Buttons Footer: 2 Clean Main Actions + More Menu */}
+              <div className="p-3 sm:p-4 pt-0 border-t-2 border-zinc-100 dark:border-[#28353d]/80 flex items-center gap-2 relative">
                 <Link
                   href={`/study/${deck.id}`}
-                  className="flex-1 btn-duo-green py-2.5 px-4 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
+                  className="flex-1 btn-duo-green py-2 px-3 sm:px-4 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   <span>Praticar</span>
-                  <ArrowRight size={15} strokeWidth={3} />
+                  <ArrowRight size={14} strokeWidth={3} />
                 </Link>
 
                 <button
@@ -606,63 +564,141 @@ export default function DeckManager({
                     setSelectedDeckId(deck.id);
                     setIsCardModalOpen(true);
                   }}
-                  className="btn-duo-white p-2 rounded-xl flex items-center justify-center"
+                  className="btn-duo-white p-2 sm:px-3 rounded-xl flex items-center justify-center gap-1 shrink-0"
                   title="Adicionar Card Manualmente"
                 >
-                  <Plus size={16} strokeWidth={3} />
+                  <Plus size={15} strokeWidth={3} />
+                  <span className="hidden xs:inline text-xs font-black uppercase">Card</span>
                 </button>
 
-                {/* Somar cards com .APKG diretamente neste baralho */}
-                <label
-                  className={`btn-duo-white p-2 rounded-xl flex items-center justify-center cursor-pointer ${
-                    isImporting && importingDeckId === deck.id ? "opacity-60 pointer-events-none" : ""
-                  }`}
-                  title="Somar cards importando .APKG neste baralho"
-                >
-                  {isImporting && importingDeckId === deck.id ? (
-                    <Loader2 size={15} className="animate-spin text-[#58cc02]" />
-                  ) : (
-                    <Upload size={15} strokeWidth={2.5} />
-                  )}
-                  <input
-                    type="file"
-                    accept=".apkg,application/zip,application/x-zip-compressed,application/octet-stream"
-                    className="hidden"
-                    onChange={(e) => handleImportApkg(e, deck.id)}
-                    disabled={isImporting}
-                  />
-                </label>
+                {/* 3-dots Menu Popover */}
+                <div className="relative shrink-0" data-deck-menu>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveMenuDeckId(activeMenuDeckId === deck.id ? null : deck.id);
+                    }}
+                    className={`btn-duo-white p-2 rounded-xl flex items-center justify-center transition-colors ${
+                      activeMenuDeckId === deck.id ? "bg-zinc-200 dark:bg-[#28353d]" : ""
+                    }`}
+                    title="Mais opções do baralho"
+                  >
+                    <MoreVertical size={16} strokeWidth={2.5} />
+                  </button>
 
-                <button
-                  onClick={() => setEditingDeck(deck)}
-                  className="btn-duo-white p-2 rounded-xl flex items-center justify-center"
-                  title="Editar Baralho"
-                >
-                  <Pencil size={15} strokeWidth={2.5} />
-                </button>
+                  <AnimatePresence>
+                    {activeMenuDeckId === deck.id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                        transition={{ duration: 0.12 }}
+                        className="absolute right-0 bottom-full mb-2 w-52 bg-white dark:bg-[#182228] border-2 border-zinc-200 dark:border-[#28353d] rounded-2xl shadow-xl z-30 p-1.5 space-y-0.5"
+                      >
+                        {/* Somar cards com .APKG */}
+                        <label className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-[#202b33] rounded-xl cursor-pointer transition-colors">
+                          <Upload size={14} className="text-[#58cc02]" strokeWidth={2.5} />
+                          <span className="flex-1">Somar cards (.APKG)</span>
+                          <input
+                            type="file"
+                            accept=".apkg,application/zip,application/x-zip-compressed,application/octet-stream"
+                            className="hidden"
+                            onChange={(e) => {
+                              setActiveMenuDeckId(null);
+                              handleImportApkg(e, deck.id);
+                            }}
+                            disabled={isImporting}
+                          />
+                        </label>
 
-                <a
-                  href={`/api/export-apkg?deckId=${deck.id}`}
-                  download
-                  className="btn-duo-white p-2 rounded-xl flex items-center justify-center"
-                  title="Exportar .APKG"
-                >
-                  <Download size={15} strokeWidth={2.5} />
-                </a>
+                        {/* Editar Baralho */}
+                        <button
+                          onClick={() => {
+                            setActiveMenuDeckId(null);
+                            setEditingDeck(deck);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-[#202b33] rounded-xl transition-colors text-left"
+                        >
+                          <Pencil size={14} className="text-blue-500" strokeWidth={2.5} />
+                          <span>Editar baralho</span>
+                        </button>
 
-                <button
-                  onClick={() => handleDeleteDeck(deck.id)}
-                  disabled={deletingId === deck.id}
-                  className="btn-duo-white p-2 rounded-xl text-rose-500 hover:text-rose-600 flex items-center justify-center disabled:opacity-50"
-                  title="Excluir Baralho"
-                >
-                  <Trash2 size={15} strokeWidth={2.5} />
-                </button>
+                        {/* Exportar .APKG */}
+                        <a
+                          href={`/api/export-apkg?deckId=${deck.id}`}
+                          download
+                          onClick={() => setActiveMenuDeckId(null)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-[#202b33] rounded-xl transition-colors"
+                        >
+                          <Download size={14} className="text-amber-500" strokeWidth={2.5} />
+                          <span>Exportar (.APKG)</span>
+                        </a>
+
+                        <div className="h-px bg-zinc-200 dark:bg-[#28353d] my-1" />
+
+                        {/* Excluir Baralho */}
+                        <button
+                          onClick={() => {
+                            setActiveMenuDeckId(null);
+                            handleDeleteDeck(deck.id);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-colors text-left"
+                        >
+                          <Trash2 size={14} strokeWidth={2.5} />
+                          <span>Excluir baralho</span>
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* ═══════════ COLLAPSIBLE ACTIVITY HEATMAP SECTION ═══════════ */}
+      <section className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 shadow-sm transition-colors">
+        <button
+          onClick={() => setShowHeatmap(!showHeatmap)}
+          className="w-full flex items-center justify-between text-left group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-500/15 border-2 border-emerald-300 dark:border-emerald-500/30 flex items-center justify-center text-[#58cc02] shrink-0">
+              <Flame size={20} className="fill-[#58cc02] text-[#58cc02]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-zinc-900 dark:text-zinc-100 group-hover:text-[#58cc02] transition-colors">
+                Consistência & Histórico de Estudos
+              </h3>
+              <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                {showHeatmap ? "Ocultar gráfico de revisões" : "Clique para visualizar seus últimos 5 meses"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+              {showHeatmap ? "Recolher" : "Expandir"}
+            </span>
+            <div className="p-2 rounded-xl bg-zinc-100 dark:bg-[#202b33] text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors">
+              {showHeatmap ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </div>
+          </div>
+        </button>
+
+        <AnimatePresence>
+          {showHeatmap && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden pt-4"
+            >
+              <ActivityHeatmap activityData={activityData} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
 
       {/* ═══════════ MODAL: CRIAR BARALHO ═══════════ */}
       <AnimatePresence>
