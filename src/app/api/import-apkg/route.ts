@@ -2,124 +2,46 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getSqlJs } from "@/lib/sqlite";
 import JSZip from "jszip";
+import { decompress as zstdDecompress } from "fzstd";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 // ═══════════════════════════════════════════════════════════════════
-// APKG IMPORT API — Leitor nativo de pacotes Anki (.apkg)
-// Suporte: collection.anki2, collection.anki21, multi-deck,
-// limpeza de HTML, cloze deletion, merge aditivo com dedup
+// APKG IMPORT ENGINE — Leitor Nativo e Completo de Pacotes Anki
+// Suporte avançado:
+// • collection.anki2 (Legado v11)
+// • collection.anki21 (Moderno v14/v15/v16)
+// • collection.anki21b (Zstandard comprimido Anki 2.1.50+ / 23.x / 24.x)
+// • Modelos com múltiplos cards (Invertidos, Vocabulário com várias faces)
+// • Cloze deletions por card (c1, c2, c3 isolados com precisão)
+// • Renderização de templates Anki (qfmt/afmt com condicionais {{#Field}})
+// • Suporte a mídia/imagens embutidas (convertidas para Data URL com segurança)
+// • LaTeX e MathJax ([$]...[/$], \(...\), \[...\])
+// • Limpeza profunda de HTML sujo (remove <style>, <script>, tags órfãs)
+// • Deduplicação inteligente de cards (Front + Back)
+// • Preservação de agendamento SRS existente (Ease, Reps, Intervalo)
+// • Modos: "new" (cria decks isolados) ou "merge" (soma a deck existente)
 // ═══════════════════════════════════════════════════════════════════
 
-/**
- * Converte HTML do Anki para texto limpo / Markdown leve.
- * - <br>, <div> → \n
- * - <b>/<strong> → **...**
- * - <i>/<em> → *...*
- * - <u> → __...__
- * - cloze {{c1::answer::hint}} → [answer]
- * - [sound:file] → (removido)
- * - HTML entities → caracteres
- * - Remove todas as demais tags HTML
- */
-function cleanAnkiHtml(html: string): string {
-  if (!html) return "";
-
-  let text = html;
-
-  // Converte <br>, <br/>, <br /> para \n
-  text = text.replace(/<br\s*\/?>/gi, "\n");
-
-  // Converte <div>...</div> para conteúdo + \n
-  text = text.replace(/<div[^>]*>(.*?)<\/div>/gi, "$1\n");
-
-  // Converte <li> para Markdown list
-  text = text.replace(/<li[^>]*>(.*?)<\/li>/gi, "- $1\n");
-
-  // Preserva negrito: <b> ou <strong>
-  text = text.replace(/<(b|strong)>(.*?)<\/\1>/gi, "**$2**");
-  text = text.replace(/<(b|strong)\s[^>]*>(.*?)<\/\1>/gi, "**$2**");
-
-  // Preserva itálico: <i> ou <em>
-  text = text.replace(/<(i|em)>(.*?)<\/\1>/gi, "*$2*");
-  text = text.replace(/<(i|em)\s[^>]*>(.*?)<\/\1>/gi, "*$2*");
-
-  // Preserva sublinhado: <u>
-  text = text.replace(/<u>(.*?)<\/u>/gi, "__$1__");
-  text = text.replace(/<u\s[^>]*>(.*?)<\/u>/gi, "__$1__");
-
-  // Trata cloze deletions: {{c1::answer::hint}} → [answer]
-  text = text.replace(/\{\{c\d+::(.*?)(?:::[^}]*)?\}\}/g, "[$1]");
-
-  // Remove referências de áudio [sound:arquivo]
-  text = text.replace(/\[sound:[^\]]+\]/gi, "");
-
-  // Remove tags de imagem, preservando o alt text se houver
-  text = text.replace(/<img[^>]+alt="([^"]*)"[^>]*\/?>/gi, "($1)");
-  text = text.replace(/<img[^>]*\/?>/gi, "");
-
-  // Remove todas as demais tags HTML
-  text = text.replace(/<[^>]+>/g, "");
-
-  // HTML entities
-  text = text.replace(/&nbsp;/gi, " ");
-  text = text.replace(/&amp;/gi, "&");
-  text = text.replace(/&lt;/gi, "<");
-  text = text.replace(/&gt;/gi, ">");
-  text = text.replace(/&quot;/gi, '"');
-  text = text.replace(/&#39;/gi, "'");
-  text = text.replace(/&#x27;/gi, "'");
-  text = text.replace(/&apos;/gi, "'");
-
-  // Numeric HTML entities
-  text = text.replace(/&#(\d+);/g, (_, code) =>
-    String.fromCharCode(parseInt(code, 10))
-  );
-  text = text.replace(/&#x([0-9a-f]+);/gi, (_, code) =>
-    String.fromCharCode(parseInt(code, 16))
-  );
-
-  // Limpa espaços excessivos e linhas vazias
-  text = text.replace(/[ \t]+/g, " ");
-  text = text.replace(/\n{3,}/g, "\n\n");
-  text = text.trim();
-
-  return text;
+interface AnkiModelTemplate {
+  name: string;
+  ord: number;
+  qfmt: string;
+  afmt: string;
 }
 
-/**
- * Converte nome hierárquico do Anki para exibição.
- * Ex: "English::Vocabulary::Advanced" → "English - Vocabulary - Advanced"
- */
-function cleanDeckName(name: string): string {
-  return name.replace(/::/g, " - ");
-}
-
-/**
- * Gera um ícone emoji baseado no nome do deck.
- */
-function getDeckIcon(name: string): string {
-  const lower = name.toLowerCase();
-  if (/\b(ingl[eê]s|english)\b/i.test(lower)) return "\uD83C\uDDEC\uD83C\uDDE7";
-  if (/\b(espanhol|spanish|espa[ñn]ol)\b/i.test(lower)) return "\uD83C\uDDEA\uD83C\uDDF8";
-  if (/\b(franc[eê]s|french|fran[cç]ais)\b/i.test(lower)) return "\uD83C\uDDEB\uD83C\uDDF7";
-  if (/\b(alem[aã]o|german|deutsch)\b/i.test(lower)) return "\uD83C\uDDE9\uD83C\uDDEA";
-  if (/\b(portugu[eê]s|portuguese)\b/i.test(lower)) return "\uD83C\uDDE7\uD83C\uDDF7";
-  if (/\b(japon[eê]s|japanese|nihongo)\b/i.test(lower)) return "\uD83C\uDDEF\uD83C\uDDF5";
-  if (/\b(matem[aá]tica|math)\b/i.test(lower)) return "\uD83D\uDCCA";
-  if (/\b(hist[oó]ria|history)\b/i.test(lower)) return "\uD83D\uDCDC";
-  if (/\b(ci[eê]ncia|science|biolog|qu[ií]mica|f[ií]sica)\b/i.test(lower)) return "\uD83E\uDDEC";
-  if (/\b(medicina|medicine|anatom|saude|sa[uú]de)\b/i.test(lower)) return "\uD83E\uDE7A";
-  if (/\b(direito|law|jur[ií]d)\b/i.test(lower)) return "\u2696\uFE0F";
-  if (/\b(programa|code|develop|software)\b/i.test(lower)) return "\uD83D\uDCBB";
-  if (/\b(geograf|geography)\b/i.test(lower)) return "\uD83C\uDF0D";
-  if (/\b(m[uú]sica|music)\b/i.test(lower)) return "\uD83C\uDFB5";
-  return "\uD83D\uDCE6"; // 📦 default
+interface AnkiModelField {
+  name: string;
+  ord: number;
 }
 
 interface AnkiModel {
   id: number;
   name: string;
   type: number; // 0 = standard, 1 = cloze
-  flds: { name: string; ord: number }[];
+  flds: AnkiModelField[];
+  tmpls: AnkiModelTemplate[];
 }
 
 interface AnkiDeck {
@@ -127,23 +49,254 @@ interface AnkiDeck {
   name: string;
 }
 
-interface ParsedCard {
+interface ProcessedCard {
+  deckId: number;
   front: string;
   back: string;
   extra: string;
-  ankiDeckId: number;
+  imageUrl?: string | null;
+  easeFactor: number;
+  interval: number;
+  repetitions: number;
+  lapses: number;
+  status: string;
+  nextReviewDate: Date;
+}
+
+/**
+ * Normaliza o nome do deck hierárquico do Anki.
+ * "Medicina::Farmacologia::Antibioticos" -> "Medicina - Farmacologia - Antibioticos"
+ */
+function cleanDeckName(name: string): string {
+  return name.replace(/::/g, " - ").trim();
+}
+
+/**
+ * Seleciona um emoji contextual para o deck importado.
+ */
+function getDeckIcon(name: string): string {
+  const lower = name.toLowerCase();
+  if (/\b(ingl[eê]s|english|toefl|ielts)\b/i.test(lower)) return "\uD83C\uDDEC\uD83C\uDDE7";
+  if (/\b(espanhol|spanish|espa[ñn]ol)\b/i.test(lower)) return "\uD83C\uDDEA\uD83C\uDDF8";
+  if (/\b(franc[eê]s|french|fran[cç]ais)\b/i.test(lower)) return "\uD83C\uDDEB\uD83C\uDDF7";
+  if (/\b(alem[aã]o|german|deutsch)\b/i.test(lower)) return "\uD83C\uDDE9\uD83C\uDDEA";
+  if (/\b(portugu[eê]s|portuguese|gram[aá]tica)\b/i.test(lower)) return "\uD83C\uDDE7\uD83C\uDDF7";
+  if (/\b(japon[eê]s|japanese|nihongo|kanji|hiragana)\b/i.test(lower)) return "\uD83C\uDDEF\uD83C\uDDF5";
+  if (/\b(italiano|italian)\b/i.test(lower)) return "\uD83C\uDDEE\uD83C\uDDF9";
+  if (/\b(chin[eê]s|mandarim|chinese|hanzi)\b/i.test(lower)) return "\uD83C\uDDE8\uD83C\uDDF3";
+  if (/\b(matem[aá]tica|math|c[aá]lculo|f[oó]rmula)\b/i.test(lower)) return "\uD83D\uDCCA";
+  if (/\b(hist[oó]ria|history)\b/i.test(lower)) return "\uD83D\uDCDC";
+  if (/\b(ci[eê]ncia|science|biolog|qu[ií]mica|f[ií]sica)\b/i.test(lower)) return "\uD83E\uDDEC";
+  if (/\b(medicina|medicine|anatom|saude|sa[uú]de|farmac|clinica)\b/i.test(lower)) return "\uD83E\uDE7A";
+  if (/\b(direito|law|jur[ií]d|oab|concurso)\b/i.test(lower)) return "\u2696\uFE0F";
+  if (/\b(programa|code|develop|software|python|javascript|ti)\b/i.test(lower)) return "\uD83D\uDCBB";
+  if (/\b(geograf|geography|pa[ií]ses|capitais)\b/i.test(lower)) return "\uD83C\uDF0D";
+  if (/\b(m[uú]sica|music|viol[aã]o|teoria)\b/i.test(lower)) return "\uD83C\uDFB5";
+  if (/\b(filosof|sociolog|livro|literatura)\b/i.test(lower)) return "\uD83D\uDCD6";
+  return "\uD83D\uDCE6"; // 📦 default
+}
+
+/**
+ * Limpa HTML do Anki para Markdown limpo e amigável.
+ * Resolve imagens embutidas usando o mapa de mídia do pacote.
+ */
+function cleanAnkiHtml(
+  html: string,
+  mediaResolver?: (filename: string) => { dataUrl?: string; mimeType?: string } | null,
+  extractedImagesCollector?: string[]
+): string {
+  if (!html) return "";
+
+  let text = html;
+
+  // 1. Remove blocos <style>...</style> e <script>...</script> completamente
+  text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+  text = text.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+
+  // 2. Normaliza LaTeX e MathJax
+  text = text.replace(/\[\$\$\]([\s\S]*?)\[\/\$\$\]/gi, "\n$$\n$1\n$$\n");
+  text = text.replace(/\[\$\]([\s\S]*?)\[\/\$\]/gi, " $$1$ ");
+  text = text.replace(/\\\[([\s\S]*?)\\\]/gi, "\n$$\n$1\n$$\n");
+  text = text.replace(/\\\(([\s\S]*?)\\\)/gi, " $$1$ ");
+
+  // 3. Processa imagens <img src="...">
+  text = text.replace(/<img[^>]+src=["']?([^"'>\s]+)["']?[^>]*alt=["']?([^"'>]*)["']?[^>]*\/?>/gi, (match, src, alt) => {
+    return handleImageTag(src, alt, mediaResolver, extractedImagesCollector);
+  });
+  text = text.replace(/<img[^>]+src=["']?([^"'>\s]+)["']?[^>]*\/?>/gi, (match, src) => {
+    return handleImageTag(src, "", mediaResolver, extractedImagesCollector);
+  });
+
+  // 4. Converte tags estruturais
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/p>/gi, "\n\n");
+  text = text.replace(/<div[^>]*>/gi, "");
+  text = text.replace(/<\/div>/gi, "\n");
+  text = text.replace(/<li[^>]*>(.*?)<\/li>/gi, "- $1\n");
+  text = text.replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, "\n### $1\n");
+
+  // 5. Preserva formatações básicas em Markdown
+  text = text.replace(/<(b|strong)>(.*?)<\/\1>/gi, "**$2**");
+  text = text.replace(/<(b|strong)\s[^>]*>(.*?)<\/\1>/gi, "**$2**");
+  text = text.replace(/<(i|em)>(.*?)<\/\1>/gi, "*$2*");
+  text = text.replace(/<(i|em)\s[^>]*>(.*?)<\/\1>/gi, "*$2*");
+  text = text.replace(/<u>(.*?)<\/u>/gi, "__$1__");
+  text = text.replace(/<u\s[^>]*>(.*?)<\/u>/gi, "__$1__");
+  text = text.replace(/<sup>(.*?)<\/sup>/gi, "^($1)");
+  text = text.replace(/<sub>(.*?)<\/sub>/gi, "_($1)");
+  text = text.replace(/<code>(.*?)<\/code>/gi, "`$1`");
+  text = text.replace(/<pre[^>]*>([\s\S]*?)<\/pre>/gi, "\n```\n$1\n```\n");
+
+  // 6. Remove referências a sons locais do Anki [sound:file.mp3]
+  text = text.replace(/\[sound:[^\]]+\]/gi, "");
+
+  // 7. Remove todas as outras tags HTML residuais
+  text = text.replace(/<[^>]+>/g, "");
+
+  // 8. Decodifica HTML Entities
+  text = text.replace(/&nbsp;/gi, " ");
+  text = text.replace(/&amp;/gi, "&");
+  text = text.replace(/&lt;/gi, "<");
+  text = text.replace(/&gt;/gi, ">");
+  text = text.replace(/&quot;/gi, '"');
+  text = text.replace(/&#39;/gi, "'");
+  text = text.replace(/&apos;/gi, "'");
+  text = text.replace(/&mdash;/gi, "—");
+  text = text.replace(/&ndash;/gi, "–");
+  text = text.replace(/&hellip;/gi, "…");
+  text = text.replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
+  text = text.replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)));
+
+  // 9. Limpeza de espaçamentos em branco repetidos
+  text = text.replace(/[ \t]+/g, " ");
+  text = text.replace(/\n{3,}/g, "\n\n");
+  return text.trim();
+}
+
+function handleImageTag(
+  src: string,
+  alt: string,
+  mediaResolver?: (filename: string) => { dataUrl?: string; mimeType?: string } | null,
+  extractedImagesCollector?: string[]
+): string {
+  // Se for URL externa (http/https ou data URL pronta)
+  if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("data:")) {
+    if (extractedImagesCollector && !extractedImagesCollector.includes(src)) {
+      extractedImagesCollector.push(src);
+    }
+    return `\n![${alt || "Imagem"}](${src})\n`;
+  }
+
+  // Se tiver um resolvedor de mídia do arquivo .apkg
+  if (mediaResolver) {
+    const cleanSrc = decodeURIComponent(src).replace(/^(\.\/|\/)/, "");
+    const resolved = mediaResolver(cleanSrc);
+    if (resolved?.dataUrl) {
+      if (extractedImagesCollector && !extractedImagesCollector.includes(resolved.dataUrl)) {
+        extractedImagesCollector.push(resolved.dataUrl);
+      }
+      return `\n![${alt || cleanSrc}](${resolved.dataUrl})\n`;
+    }
+  }
+
+  // Fallback: indica que existia uma imagem com aquele nome
+  return alt ? ` [Imagem: ${alt}] ` : ` [Imagem: ${src}] `;
+}
+
+/**
+ * Renderiza um card do tipo Cloze (omissão de palavras) para um `ord` específico.
+ * Na Anki:
+ * - c1 corresponde a ord = 0
+ * - c2 corresponde a ord = 1, etc.
+ * Na pergunta (front): o cloze alvo é escondido com [...] ou [dica]. Outros clozes são revelados!
+ * Na resposta (back): o cloze alvo é destacado em negrito (**resposta**).
+ */
+function renderClozeCard(
+  rawText: string,
+  ord: number,
+  allFields: string[],
+  cleanFn: (t: string) => string
+): { front: string; back: string; extra: string } {
+  const targetNumber = ord + 1;
+  const clozeRegex = /\{\{c(\d+)::(.*?)(?:::(.*?))?\}\}/g;
+
+  // Front: Alvo escondido; Outros clozes mostram o conteúdo
+  const frontRaw = rawText.replace(clozeRegex, (_, cNum, ans, hint) => {
+    const n = parseInt(cNum, 10);
+    if (n === targetNumber) {
+      return hint ? `[${hint}]` : "[...]";
+    }
+    return ans;
+  });
+
+  // Back: Alvo destacado; Outros clozes mostram o conteúdo
+  const backRaw = rawText.replace(clozeRegex, (_, cNum, ans) => {
+    const n = parseInt(cNum, 10);
+    if (n === targetNumber) {
+      return `**${ans}**`;
+    }
+    return ans;
+  });
+
+  const front = cleanFn(frontRaw);
+  const back = cleanFn(backRaw);
+
+  let extra = "";
+  if (allFields.length > 1) {
+    const extraParts = allFields.slice(1).map(cleanFn).filter((t) => t.length > 0);
+    extra = extraParts.join("\n\n").substring(0, 1500);
+  }
+
+  return { front, back, extra };
+}
+
+/**
+ * Avalia templates padrão de notetype (Model) do Anki.
+ * Suporta condicionais {{#Campo}}...{{/Campo}}, {{^Campo}}...{{/Campo}}
+ * e substituição de tags {{Campo}}, {{text:Campo}}, {{FrontSide}}.
+ */
+function evaluateAnkiTemplate(
+  templateStr: string,
+  fieldMap: Record<string, string>,
+  frontSideRendered?: string
+): string {
+  let output = templateStr;
+
+  // 1. Condicional positivo: {{#Campo}}conteudo{{/Campo}}
+  output = output.replace(/\{\{#([^\}]+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, fieldName, content) => {
+    const val = fieldMap[fieldName]?.trim();
+    return val && val.length > 0 ? content : "";
+  });
+
+  // 2. Condicional negativo / invertido: {{^Campo}}conteudo{{/Campo}}
+  output = output.replace(/\{\{\^([^\}]+)\}\}([\s\S]*?)\{\{\/\1\}\}/g, (_, fieldName, content) => {
+    const val = fieldMap[fieldName]?.trim();
+    return !val || val.length === 0 ? content : "";
+  });
+
+  // 3. Substitui {{FrontSide}} se disponível
+  if (frontSideRendered !== undefined) {
+    output = output.replace(/\{\{FrontSide\}\}/gi, frontSideRendered);
+  }
+
+  // 4. Substitui campos simples {{Campo}}, {{text:Campo}}, {{cloze:Campo}}
+  output = output.replace(/\{\{(?:text:|cloze:)?([^\}]+)\}\}/g, (_, fieldName) => {
+    return fieldMap[fieldName] || "";
+  });
+
+  return output;
 }
 
 export async function POST(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const mode = searchParams.get("mode") || "new";
+    const mode = searchParams.get("mode") || "new"; // "new" ou "merge"
     const targetDeckId = searchParams.get("deckId");
 
-    // Validação de modo merge
+    // Validação do modo merge
     if (mode === "merge" && !targetDeckId) {
       return NextResponse.json(
-        { error: "Par\u00e2metro deckId \u00e9 obrigat\u00f3rio no modo merge" },
+        { error: "Parâmetro deckId é obrigatório no modo merge." },
         { status: 400 }
       );
     }
@@ -152,7 +305,7 @@ export async function POST(request: Request) {
       const targetDeck = await db.deck.findUnique({ where: { id: targetDeckId! } });
       if (!targetDeck) {
         return NextResponse.json(
-          { error: "Baralho de destino n\u00e3o encontrado" },
+          { error: "Baralho de destino não encontrado no banco de dados." },
           { status: 404 }
         );
       }
@@ -163,240 +316,539 @@ export async function POST(request: Request) {
 
     if (!file) {
       return NextResponse.json(
-        { error: "Nenhum arquivo enviado" },
+        { error: "Nenhum arquivo .apkg foi enviado." },
         { status: 400 }
       );
     }
 
-    // ═══════════ DESCOMPACTAR APKG ═══════════
+    // ═══════════════════════════════════════════════════════════════
+    // ETAPA 1: DESCOMPACTAR O PACOTE ZIP (.APKG)
+    // ═══════════════════════════════════════════════════════════════
     const arrayBuffer = await file.arrayBuffer();
     let zip: JSZip;
     try {
       zip = await JSZip.loadAsync(arrayBuffer);
-    } catch {
+    } catch (e: any) {
       return NextResponse.json(
-        { error: "O arquivo n\u00e3o \u00e9 um ZIP v\u00e1lido. Certifique-se de que \u00e9 um pacote .apkg do Anki." },
+        { error: "O arquivo enviado não é um pacote Anki (.apkg) válido: " + e.message },
         { status: 400 }
       );
     }
 
-    // Tenta collection.anki21 (formato moderno) primeiro, depois collection.anki2
-    let collectionFile = zip.file("collection.anki21") || zip.file("collection.anki2");
-    if (!collectionFile) {
-      // Alguns exportadores usam outros nomes - tenta encontrar qualquer .anki2/.anki21
-      const allFiles = Object.keys(zip.files);
-      const ankiFile = allFiles.find(
-        (f) => f.endsWith(".anki2") || f.endsWith(".anki21")
-      );
-      if (ankiFile) {
-        collectionFile = zip.file(ankiFile);
+    // ═══════════════════════════════════════════════════════════════
+    // ETAPA 2: LOCALIZAR E DESCOMPRIMIR O BANCO SQLITE
+    // Ordem de prioridade:
+    // 1. collection.anki21b (Zstandard comprimido - Anki 2.1.50+)
+    // 2. collection.anki21 (SQLite moderno)
+    // 3. collection.anki2 (SQLite legado v11)
+    // 4. Varredura por qualquer arquivo interno com tais extensões
+    // ═══════════════════════════════════════════════════════════════
+    let sqliteBuffer: Uint8Array | null = null;
+
+    if (zip.file("collection.anki21b")) {
+      try {
+        const compressed = await zip.file("collection.anki21b")!.async("uint8array");
+        sqliteBuffer = zstdDecompress(compressed);
+      } catch (err: any) {
+        console.warn("Falha ao descomprimir collection.anki21b:", err);
       }
     }
 
-    if (!collectionFile) {
+    if (!sqliteBuffer && zip.file("collection.anki21")) {
+      sqliteBuffer = await zip.file("collection.anki21")!.async("uint8array");
+    }
+
+    if (!sqliteBuffer && zip.file("collection.anki2")) {
+      sqliteBuffer = await zip.file("collection.anki2")!.async("uint8array");
+    }
+
+    // Fallback: varre qualquer arquivo que termine com anki2/anki21/anki21b
+    if (!sqliteBuffer) {
+      const allFileNames = Object.keys(zip.files);
+      const matchedName = allFileNames.find(
+        (f) => f.endsWith(".anki21b") || f.endsWith(".anki21") || f.endsWith(".anki2")
+      );
+      if (matchedName) {
+        const entry = zip.file(matchedName)!;
+        if (matchedName.endsWith(".anki21b")) {
+          const comp = await entry.async("uint8array");
+          sqliteBuffer = zstdDecompress(comp);
+        } else {
+          sqliteBuffer = await entry.async("uint8array");
+        }
+      }
+    }
+
+    if (!sqliteBuffer) {
       return NextResponse.json(
         {
           error:
-            "Arquivo n\u00e3o cont\u00e9m um banco de dados Anki v\u00e1lido (collection.anki2 ou collection.anki21 n\u00e3o encontrado).",
+            "Arquivo não contém uma coleção Anki válida (collection.anki2, collection.anki21 ou collection.anki21b não encontrado).",
         },
         { status: 400 }
       );
     }
 
-    // ═══════════ ABRIR SQLITE ═══════════
-    const sqliteBuffer = await collectionFile.async("uint8array");
+    // ═══════════════════════════════════════════════════════════════
+    // ETAPA 3: CONSTRUIR MAPA DE MÍDIA / IMAGENS
+    // ═══════════════════════════════════════════════════════════════
+    const mediaFilenameToZipKey: Record<string, string> = {};
+    const mediaFile = zip.file("media");
+    if (mediaFile) {
+      try {
+        const mediaJsonStr = await mediaFile.async("string");
+        const parsed = JSON.parse(mediaJsonStr);
+        for (const [zipKey, originalName] of Object.entries(parsed)) {
+          if (typeof originalName === "string") {
+            mediaFilenameToZipKey[originalName.toLowerCase()] = zipKey;
+            mediaFilenameToZipKey[originalName] = zipKey;
+          }
+        }
+      } catch (e) {
+        console.warn("Aviso ao ler mapa de mídia:", e);
+      }
+    }
+
+    // Cache em memória de Data URLs resolvidas para evitar reprocessamento
+    const resolvedMediaCache = new Map<string, { dataUrl?: string; mimeType?: string } | null>();
+
+    const mediaResolver = (rawFilename: string) => {
+      const key = rawFilename.trim();
+      const lowerKey = key.toLowerCase();
+      const cacheHit = resolvedMediaCache.get(lowerKey);
+      if (cacheHit !== undefined) return cacheHit;
+
+      const zipKey = mediaFilenameToZipKey[lowerKey] || mediaFilenameToZipKey[key];
+      if (!zipKey) {
+        resolvedMediaCache.set(lowerKey, null);
+        return null;
+      }
+
+      const zipEntry = zip.file(zipKey);
+      if (!zipEntry) {
+        resolvedMediaCache.set(lowerKey, null);
+        return null;
+      }
+
+      // Descobre MIME type pela extensão
+      let mimeType = "image/jpeg";
+      if (lowerKey.endsWith(".png")) mimeType = "image/png";
+      else if (lowerKey.endsWith(".gif")) mimeType = "image/gif";
+      else if (lowerKey.endsWith(".svg")) mimeType = "image/svg+xml";
+      else if (lowerKey.endsWith(".webp")) mimeType = "image/webp";
+      else if (lowerKey.endsWith(".jpg") || lowerKey.endsWith(".jpeg")) mimeType = "image/jpeg";
+      else {
+        // Se não for imagem, não embutir inline como data:image
+        resolvedMediaCache.set(lowerKey, null);
+        return null;
+      }
+
+      // Obtém bytes e converte para Data URL se o arquivo for <= 2.5MB
+      try {
+        // Leitura síncrona do zip em uint8array
+        const bytes = (zipEntry as any)._data?.uncompressed ?? null;
+        if (bytes && bytes.length <= 2621440) {
+          const b64 = Buffer.from(bytes).toString("base64");
+          const res = { dataUrl: `data:${mimeType};base64,${b64}`, mimeType };
+          resolvedMediaCache.set(lowerKey, res);
+          return res;
+        }
+      } catch {
+        // Se falhar leitura rápida, segue sem travar
+      }
+
+      resolvedMediaCache.set(lowerKey, null);
+      return null;
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // ETAPA 4: INICIALIZAR BANCO SQLITE (SQL.JS WASM)
+    // ═══════════════════════════════════════════════════════════════
     const SQL = await getSqlJs();
     let sqliteDb: InstanceType<typeof SQL.Database>;
     try {
       sqliteDb = new SQL.Database(sqliteBuffer);
-    } catch {
+    } catch (e: any) {
       return NextResponse.json(
-        { error: "Falha ao abrir o banco de dados SQLite do pacote Anki. O arquivo pode estar corrompido." },
+        { error: "Falha ao inicializar banco de dados SQLite do APKG: " + e.message },
         { status: 400 }
       );
     }
 
-    // ═══════════ EXTRAIR MODELOS (NOTE TYPES) ═══════════
-    const models: Record<number, AnkiModel> = {};
+    // ═══════════════════════════════════════════════════════════════
+    // ETAPA 5: DETECTAR TABELAS E EXTRAIR DECKS E NOTETYPES
+    // ═══════════════════════════════════════════════════════════════
+    const existingTables = new Set<string>();
     try {
-      const colStmt = sqliteDb.prepare("SELECT models FROM col LIMIT 1");
-      if (colStmt.step()) {
-        const modelsJson = colStmt.getAsObject().models as string;
-        if (modelsJson) {
-          const parsedModels = JSON.parse(modelsJson);
-          for (const key in parsedModels) {
-            const m = parsedModels[key];
-            models[m.id] = {
-              id: m.id,
-              name: m.name || "Unknown",
-              type: m.type || 0,
-              flds: Array.isArray(m.flds)
-                ? m.flds
-                    .map((f: any) => ({ name: f.name, ord: f.ord }))
-                    .sort((a: any, b: any) => a.ord - b.ord)
-                : [],
-            };
-          }
-        }
+      const tblStmt = sqliteDb.prepare("SELECT name FROM sqlite_master WHERE type='table'");
+      while (tblStmt.step()) {
+        const row = tblStmt.getAsObject();
+        if (row.name) existingTables.add(String(row.name).toLowerCase());
       }
-      colStmt.free();
-    } catch (e) {
-      console.warn("Aviso: n\u00e3o foi poss\u00edvel ler modelos do col:", e);
+      tblStmt.free();
+    } catch {
+      // Ignora
     }
 
-    // ═══════════ EXTRAIR DECKS DO ANKI ═══════════
+    // 5.1 Extração de Decks
     const ankiDecks: Record<number, AnkiDeck> = {};
-    try {
-      const colStmt = sqliteDb.prepare("SELECT decks FROM col LIMIT 1");
-      if (colStmt.step()) {
-        const decksJson = colStmt.getAsObject().decks as string;
-        if (decksJson) {
-          const parsedDecks = JSON.parse(decksJson);
-          for (const key in parsedDecks) {
-            const d = parsedDecks[key];
-            ankiDecks[d.id] = {
-              id: d.id,
-              name: cleanDeckName(d.name || "Default"),
-            };
-          }
+
+    // Tentativa A: tabela `decks` (Anki v14+)
+    if (existingTables.has("decks")) {
+      try {
+        const dStmt = sqliteDb.prepare("SELECT id, name FROM decks");
+        while (dStmt.step()) {
+          const row = dStmt.getAsObject();
+          const dId = Number(row.id);
+          const dName = cleanDeckName(String(row.name || "Default"));
+          ankiDecks[dId] = { id: dId, name: dName };
         }
+        dStmt.free();
+      } catch (e) {
+        console.warn("Aviso ao ler tabela decks:", e);
       }
-      colStmt.free();
-    } catch (e) {
-      console.warn("Aviso: n\u00e3o foi poss\u00edvel ler decks do col:", e);
     }
 
-    // ═══════════ MAPEAR NOTES → CARDS (deck association via cards table) ═══════════
-    // No Anki, a tabela `cards` vincula notes a decks. Uma nota pode gerar N cards.
-    // Precisamos: note.flds + note.mid + card.did (deck id)
-    const noteToDecks: Record<number, number> = {};
-    try {
-      const cardsStmt = sqliteDb.prepare("SELECT nid, did FROM cards");
-      while (cardsStmt.step()) {
-        const row = cardsStmt.getAsObject();
-        const nid = row.nid as number;
-        const did = row.did as number;
-        // Se a nota já está mapeada, mantém o primeiro deck
-        if (!noteToDecks[nid]) {
-          noteToDecks[nid] = did;
+    // Tentativa B: coluna `decks` na tabela `col` (Anki v11 / JSON padrão)
+    if (Object.keys(ankiDecks).length === 0 && existingTables.has("col")) {
+      try {
+        const colStmt = sqliteDb.prepare("SELECT decks FROM col LIMIT 1");
+        if (colStmt.step()) {
+          const decksJson = colStmt.getAsObject().decks as string;
+          if (decksJson) {
+            const parsed = JSON.parse(decksJson);
+            for (const key of Object.keys(parsed)) {
+              const d = parsed[key];
+              const dId = Number(d.id || key);
+              ankiDecks[dId] = {
+                id: dId,
+                name: cleanDeckName(String(d.name || "Default")),
+              };
+            }
+          }
         }
+        colStmt.free();
+      } catch (e) {
+        console.warn("Aviso ao ler col.decks:", e);
       }
-      cardsStmt.free();
-    } catch (e) {
-      console.warn("Aviso: n\u00e3o foi poss\u00edvel ler cards table:", e);
     }
 
-    // ═══════════ EXTRAIR E PROCESSAR NOTAS ═══════════
-    const parsedCards: ParsedCard[] = [];
-    try {
-      const notesStmt = sqliteDb.prepare("SELECT id, mid, flds, tags FROM notes");
-      while (notesStmt.step()) {
-        const row = notesStmt.getAsObject();
-        const noteId = row.id as number;
-        const mid = row.mid as number;
-        const flds = row.flds as string;
-        const fields = flds.split("\x1f");
+    // 5.2 Extração de Notetypes (Models / Tipos de Nota)
+    const models: Record<number, AnkiModel> = {};
 
-        const model = models[mid];
-        const isCloze = model?.type === 1;
+    // Tentativa A: tabela `notetypes`
+    if (existingTables.has("notetypes")) {
+      try {
+        const ntStmt = sqliteDb.prepare("SELECT id, name, config FROM notetypes");
+        while (ntStmt.step()) {
+          const row = ntStmt.getAsObject();
+          const mId = Number(row.id);
+          const mName = String(row.name || "Standard");
+          let mType = 0;
+          let flds: AnkiModelField[] = [];
+          let tmpls: AnkiModelTemplate[] = [];
 
-        let front = "";
-        let back = "";
-        let extra = "";
-
-        if (isCloze) {
-          // Para cloze, o front é o campo com as lacunas e o back é a versão completa
-          const rawText = fields[0] || "";
-          // Front: mostra as lacunas como [...] com hint
-          front = cleanAnkiHtml(
-            rawText.replace(/\{\{c\d+::(.*?)(?:::(.*?))?\}\}/g, (_, _ans, hint) =>
-              hint ? `[${hint}]` : "[...]"
-            )
-          );
-          // Back: mostra as respostas
-          back = cleanAnkiHtml(rawText);
-
-          if (fields.length > 1) {
-            extra = cleanAnkiHtml(fields.slice(1).join("\n")).substring(0, 500);
+          if (row.config) {
+            try {
+              const conf = typeof row.config === "string" ? JSON.parse(row.config) : row.config;
+              mType = conf.kind || 0;
+            } catch {}
           }
-        } else {
-          // Modelo padrão: primeiro campo = front, segundo = back
-          front = cleanAnkiHtml(fields[0] || "");
-          back = cleanAnkiHtml(fields[1] || "");
 
-          if (fields.length > 2) {
-            extra = cleanAnkiHtml(fields.slice(2).join("\n")).substring(0, 500);
+          models[mId] = { id: mId, name: mName, type: mType, flds, tmpls };
+        }
+        ntStmt.free();
+      } catch (e) {
+        console.warn("Aviso ao ler tabela notetypes:", e);
+      }
+    }
+
+    // Tentativa B: coluna `models` na tabela `col`
+    if (Object.keys(models).length === 0 && existingTables.has("col")) {
+      try {
+        const colStmt = sqliteDb.prepare("SELECT models FROM col LIMIT 1");
+        if (colStmt.step()) {
+          const modelsJson = colStmt.getAsObject().models as string;
+          if (modelsJson) {
+            const parsed = JSON.parse(modelsJson);
+            for (const key of Object.keys(parsed)) {
+              const m = parsed[key];
+              const mId = Number(m.id || key);
+              const flds: AnkiModelField[] = Array.isArray(m.flds)
+                ? m.flds.map((f: any, idx: number) => ({
+                    name: String(f.name || `Field${idx}`),
+                    ord: Number(f.ord ?? idx),
+                  }))
+                : [];
+              flds.sort((a, b) => a.ord - b.ord);
+
+              const tmpls: AnkiModelTemplate[] = Array.isArray(m.tmpls)
+                ? m.tmpls.map((t: any, idx: number) => ({
+                    name: String(t.name || `Card ${idx + 1}`),
+                    ord: Number(t.ord ?? idx),
+                    qfmt: String(t.qfmt || ""),
+                    afmt: String(t.afmt || ""),
+                  }))
+                : [];
+              tmpls.sort((a, b) => a.ord - b.ord);
+
+              models[mId] = {
+                id: mId,
+                name: String(m.name || "Standard"),
+                type: Number(m.type || 0),
+                flds,
+                tmpls,
+              };
+            }
           }
         }
-
-        // Pula cards sem conteúdo real
-        if (!front.trim() && !back.trim()) continue;
-        if (!front.trim()) front = "(Sem frente)";
-        if (!back.trim()) back = "(Sem verso)";
-
-        const ankiDeckId = noteToDecks[noteId] || 1;
-
-        parsedCards.push({ front, back, extra, ankiDeckId });
+        colStmt.free();
+      } catch (e) {
+        console.warn("Aviso ao ler col.models:", e);
       }
-      notesStmt.free();
-    } catch (e) {
-      sqliteDb.close();
-      return NextResponse.json(
-        { error: "Erro ao ler notas do banco Anki: " + (e as Error).message },
-        { status: 500 }
-      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ETAPA 6: LEITURA COMPLETA DE CARDS E NOTES
+    // Prioridade: faz JOIN entre cards e notes para garantir que
+    // todos os cartões derivados de uma mesma nota (frente/verso,
+    // omissões cloze 1, 2, 3...) sejam importados fielmente.
+    // ═══════════════════════════════════════════════════════════════
+    const processedCards: ProcessedCard[] = [];
+    let hasCardsTable = existingTables.has("cards") && existingTables.has("notes");
+
+    if (hasCardsTable) {
+      try {
+        const query = `
+          SELECT c.id as card_id, c.nid, c.did, c.odid, c.ord,
+                 c.factor, c.ivl, c.reps, c.lapses, c.due,
+                 n.mid, n.flds, n.tags
+          FROM cards c
+          JOIN notes n ON c.nid = n.id
+          ORDER BY c.did, c.id
+        `;
+        const stmt = sqliteDb.prepare(query);
+
+        while (stmt.step()) {
+          const row = stmt.getAsObject();
+          const ord = Number(row.ord || 0);
+          const mid = Number(row.mid || 0);
+          const fldsStr = String(row.flds || "");
+          const fields = fldsStr.split("\x1f");
+
+          // Deck de destino: usa odid se estiver em cram/filtered deck, senão did
+          const did = Number(row.odid) && Number(row.odid) !== 0 ? Number(row.odid) : Number(row.did || 1);
+
+          const model = models[mid];
+          const isCloze = model?.type === 1 || fldsStr.includes("{{c");
+
+          let front = "";
+          let back = "";
+          let extra = "";
+          const extractedImages: string[] = [];
+
+          const cleanWithCollector = (raw: string) => cleanAnkiHtml(raw, mediaResolver, extractedImages);
+
+          if (isCloze) {
+            // Renderização Cloze fiel ao ord do card
+            const rawText = fields[0] || "";
+            const clozeRes = renderClozeCard(rawText, ord, fields, cleanWithCollector);
+            front = clozeRes.front;
+            back = clozeRes.back;
+            extra = clozeRes.extra;
+          } else if (model && model.tmpls && model.tmpls.length > 0) {
+            // Renderização via Template Oficial do Anki
+            const tmpl = model.tmpls.find((t) => t.ord === ord) || model.tmpls[ord] || model.tmpls[0];
+            const fieldMap: Record<string, string> = {};
+            model.flds.forEach((f, idx) => {
+              fieldMap[f.name] = fields[idx] || "";
+            });
+            fields.forEach((val, idx) => {
+              if (!fieldMap[`Field${idx}`]) fieldMap[`Field${idx}`] = val;
+            });
+
+            const qfmtEval = evaluateAnkiTemplate(tmpl.qfmt, fieldMap);
+            front = cleanWithCollector(qfmtEval);
+
+            // Back template com remoção de duplicidade do FrontSide
+            const afmtCleaned = tmpl.afmt.replace(/\{\{FrontSide\}\}\s*(<hr\s*id=["']?answer["']?\/?>)?/gi, "");
+            const afmtEval = evaluateAnkiTemplate(afmtCleaned, fieldMap, qfmtEval);
+            back = cleanWithCollector(afmtEval);
+
+            // Se o verso ficou vazio por conta do template, usa fallback de campos
+            if (!back.trim()) {
+              back = cleanWithCollector(fields[1] || fields[0] || "");
+            }
+
+            // Campos extras
+            if (fields.length > 2) {
+              extra = fields.slice(2).map(cleanWithCollector).filter(Boolean).join("\n\n").substring(0, 1500);
+            }
+          } else {
+            // Fallback para modelos sem templates definidos
+            if (ord === 0) {
+              front = cleanWithCollector(fields[0] || "");
+              back = cleanWithCollector(fields[1] || fields[0] || "");
+            } else if (ord === 1) {
+              front = cleanWithCollector(fields[1] || fields[0] || "");
+              back = cleanWithCollector(fields[0] || "");
+            } else {
+              front = cleanWithCollector(fields[ord] || fields[0] || "");
+              back = cleanWithCollector(fields[1] || fields[0] || "");
+            }
+
+            if (fields.length > 2) {
+              extra = fields.slice(2).map(cleanWithCollector).filter(Boolean).join("\n\n").substring(0, 1500);
+            }
+          }
+
+          // Validações de conteúdo mínimo
+          if (!front.trim() && !back.trim()) continue;
+          if (!front.trim()) front = "(Sem pergunta)";
+          if (!back.trim()) back = "(Sem resposta)";
+
+          // Estatísticas SRS existentes do Anki
+          const reps = Math.max(0, Number(row.reps || 0));
+          const lapses = Math.max(0, Number(row.lapses || 0));
+          const ivl = Math.max(0, Number(row.ivl || 0));
+          const factor = Number(row.factor || 0);
+          const easeFactor = factor > 0 ? Number((factor / 1000).toFixed(2)) : 2.5;
+          const status = reps > 0 ? "REVIEW" : "NEW";
+
+          // Próxima data de revisão
+          let nextReviewDate = new Date();
+          if (reps > 0 && ivl > 0) {
+            nextReviewDate.setDate(nextReviewDate.getDate() + ivl);
+          }
+
+          const primaryImage = extractedImages[0] || null;
+
+          processedCards.push({
+            deckId: did,
+            front,
+            back,
+            extra,
+            imageUrl: primaryImage,
+            easeFactor,
+            interval: ivl,
+            repetitions: reps,
+            lapses,
+            status,
+            nextReviewDate,
+          });
+        }
+        stmt.free();
+      } catch (err: any) {
+        console.warn("Falha na consulta combinada cards+notes, tentando fallback simples:", err);
+        hasCardsTable = false;
+      }
+    }
+
+    // Fallback: se por algum motivo não conseguiu ler cards, lê diretamente a tabela notes
+    if (processedCards.length === 0 && existingTables.has("notes")) {
+      try {
+        const nStmt = sqliteDb.prepare("SELECT id, mid, flds, tags FROM notes");
+        while (nStmt.step()) {
+          const row = nStmt.getAsObject();
+          const fldsStr = String(row.flds || "");
+          const fields = fldsStr.split("\x1f");
+          const extractedImages: string[] = [];
+
+          const cleanFn = (raw: string) => cleanAnkiHtml(raw, mediaResolver, extractedImages);
+
+          let front = cleanFn(fields[0] || "");
+          let back = cleanFn(fields[1] || fields[0] || "");
+          let extra = fields.length > 2 ? fields.slice(2).map(cleanFn).filter(Boolean).join("\n\n").substring(0, 1500) : "";
+
+          if (!front.trim() && !back.trim()) continue;
+          if (!front.trim()) front = "(Sem pergunta)";
+          if (!back.trim()) back = "(Sem resposta)";
+
+          processedCards.push({
+            deckId: 1,
+            front,
+            back,
+            extra,
+            imageUrl: extractedImages[0] || null,
+            easeFactor: 2.5,
+            interval: 0,
+            repetitions: 0,
+            lapses: 0,
+            status: "NEW",
+            nextReviewDate: new Date(),
+          });
+        }
+        nStmt.free();
+      } catch (err: any) {
+        console.error("Erro fatal ao ler tabela notes:", err);
+      }
     }
 
     sqliteDb.close();
 
-    if (parsedCards.length === 0) {
+    if (processedCards.length === 0) {
       return NextResponse.json(
-        { error: "O arquivo APKG n\u00e3o cont\u00e9m nenhum card v\u00e1lido." },
+        { error: "Nenhum card válido foi encontrado dentro do pacote Anki (.apkg)." },
         { status: 400 }
       );
     }
 
-    // ═══════════ MODO MERGE: ADICIONAR A DECK EXISTENTE ═══════════
+    // ═══════════════════════════════════════════════════════════════
+    // ETAPA 7: INSERÇÃO NO BANCO DE DADOS (MODO MERGE VS NEW)
+    // ═══════════════════════════════════════════════════════════════
+
+    // ── MODO 7A: MERGE (SOMAR A DECK EXISTENTE SEM SUBSTITUIR) ──
     if (mode === "merge" && targetDeckId) {
-      // Busca cards existentes no deck alvo para deduplicação
+      // Busca cards já existentes no baralho alvo para não gerar duplicatas exatas
       const existingCards = await db.card.findMany({
         where: { deckId: targetDeckId },
-        select: { front: true },
+        select: { front: true, back: true },
       });
-      const existingFronts = new Set(
-        existingCards.map((c) => c.front.trim().toLowerCase())
+
+      const existingPairSet = new Set(
+        existingCards.map((c) => `${c.front.trim().toLowerCase()}:::${c.back.trim().toLowerCase()}`)
       );
 
-      const cardsToInsert: { deckId: string; front: string; back: string; extra: string; nextReviewDate: Date }[] = [];
+      const cardsToInsert: any[] = [];
       let skipped = 0;
 
-      for (const card of parsedCards) {
-        const key = card.front.trim().toLowerCase();
-        if (existingFronts.has(key)) {
+      for (const card of processedCards) {
+        const pairKey = `${card.front.trim().toLowerCase()}:::${card.back.trim().toLowerCase()}`;
+
+        if (existingPairSet.has(pairKey)) {
           skipped++;
           continue;
         }
-        existingFronts.add(key); // Evita duplicatas dentro do próprio APKG
+
+        existingPairSet.add(pairKey); // Evita duplicatas dentro do próprio lote importado
+
         cardsToInsert.push({
           deckId: targetDeckId,
           front: card.front,
           back: card.back,
           extra: card.extra || "",
-          nextReviewDate: new Date(),
+          imageUrl: card.imageUrl || null,
+          easeFactor: card.easeFactor,
+          interval: card.interval,
+          repetitions: card.repetitions,
+          lapses: card.lapses,
+          status: card.status,
+          nextReviewDate: card.nextReviewDate,
         });
       }
 
-      // Inserir em chunks
-      const chunkSize = 50;
-      for (let i = 0; i < cardsToInsert.length; i += chunkSize) {
-        const chunk = cardsToInsert.slice(i, i + chunkSize);
-        await db.card.createMany({ data: chunk });
+      // Inserção em lotes de 75 para máxima eficiência no PostgreSQL
+      const batchSize = 75;
+      for (let i = 0; i < cardsToInsert.length; i += batchSize) {
+        const batch = cardsToInsert.slice(i, i + batchSize);
+        await db.card.createMany({ data: batch });
       }
 
       const targetDeck = await db.deck.findUnique({ where: { id: targetDeckId } });
 
       return NextResponse.json({
         success: true,
+        mode: "merge",
         decks: [
           {
             id: targetDeckId,
@@ -410,106 +862,113 @@ export async function POST(request: Request) {
       });
     }
 
-    // ═══════════ MODO NEW: CRIAR DECKS NOVOS ═══════════
-    // Agrupa cards por deck de origem no Anki
-    const cardsByDeck: Record<number, ParsedCard[]> = {};
-    for (const card of parsedCards) {
-      if (!cardsByDeck[card.ankiDeckId]) {
-        cardsByDeck[card.ankiDeckId] = [];
+    // ── MODO 7B: NEW (CRIAR NOVOS BARALHOS) ──
+    // Agrupa cards por deck de origem do Anki
+    const cardsByDeckId: Record<number, ProcessedCard[]> = {};
+    for (const card of processedCards) {
+      if (!cardsByDeckId[card.deckId]) {
+        cardsByDeckId[card.deckId] = [];
       }
-      cardsByDeck[card.ankiDeckId].push(card);
+      cardsByDeckId[card.deckId].push(card);
     }
+
+    const presentDeckIds = Object.keys(cardsByDeckId).map(Number);
+    const nonDefaultDeckIds = presentDeckIds.filter((id) => {
+      const name = ankiDecks[id]?.name;
+      return name && name.toLowerCase() !== "default";
+    });
+
+    const fileBaseName = file.name.replace(/\.apkg$/i, "").replace(/[_-]/g, " ").trim();
 
     const deckResults: { id: string; title: string; importedCards: number; skippedDuplicates: number }[] = [];
     let totalImported = 0;
     let totalSkipped = 0;
 
-    // Se há apenas 1 deck (ou todos os cards estão no Default), cria um deck só
-    const deckIds = Object.keys(cardsByDeck).map(Number);
-    const nonDefaultDecks = deckIds.filter((id) => {
-      const name = ankiDecks[id]?.name;
-      return name && name !== "Default";
-    });
+    for (const dId of presentDeckIds) {
+      const deckCards = cardsByDeckId[dId];
+      if (!deckCards || deckCards.length === 0) continue;
 
-    // Usa nome do arquivo como fallback
-    const fileBaseName = file.name.replace(/\.apkg$/i, "");
-
-    for (const ankiDeckId of deckIds) {
-      const cards = cardsByDeck[ankiDeckId];
-      if (!cards || cards.length === 0) continue;
-
-      let deckTitle: string;
-      if (nonDefaultDecks.length === 0) {
-        // Todos os cards estão no Default — usa nome do arquivo
-        deckTitle = fileBaseName;
-      } else if (ankiDecks[ankiDeckId]) {
-        deckTitle = ankiDecks[ankiDeckId].name;
-        if (deckTitle === "Default" && nonDefaultDecks.length > 0) {
-          // Pula o deck Default se existem outros decks com cards
+      let deckTitle = "";
+      if (nonDefaultDeckIds.length === 0) {
+        // Se todos os cards estavam no deck "Default", usa o nome do arquivo .apkg
+        deckTitle = fileBaseName || "Baralho Importado";
+      } else if (ankiDecks[dId]) {
+        deckTitle = ankiDecks[dId].name;
+        // Pula o deck Default vazio ou residual se existirem outros decks com nomes reais
+        if (deckTitle.toLowerCase() === "default" && nonDefaultDeckIds.length > 0) {
           continue;
         }
       } else {
-        deckTitle = fileBaseName;
+        deckTitle = `${fileBaseName} (Parte ${dId})`;
       }
 
-      // Criar novo deck
+      // Cria o novo Deck
       const newDeck = await db.deck.create({
         data: {
           title: deckTitle,
-          description: `Importado do Anki (${cards.length} cards)`,
+          description: `Importado de pacote Anki (${deckCards.length} cards)`,
           icon: getDeckIcon(deckTitle),
           color: "#10b981",
         },
       });
 
-      // Deduplicar dentro do batch
-      const seenFronts = new Set<string>();
-      const cardsToInsert: { deckId: string; front: string; back: string; extra: string; nextReviewDate: Date }[] = [];
-      let skipped = 0;
+      // Deduplicação interna
+      const seenPairSet = new Set<string>();
+      const cardsToInsert: any[] = [];
+      let skippedInDeck = 0;
 
-      for (const card of cards) {
-        const key = card.front.trim().toLowerCase();
-        if (seenFronts.has(key)) {
-          skipped++;
+      for (const card of deckCards) {
+        const pairKey = `${card.front.trim().toLowerCase()}:::${card.back.trim().toLowerCase()}`;
+        if (seenPairSet.has(pairKey)) {
+          skippedInDeck++;
           continue;
         }
-        seenFronts.add(key);
+        seenPairSet.add(pairKey);
+
         cardsToInsert.push({
           deckId: newDeck.id,
           front: card.front,
           back: card.back,
           extra: card.extra || "",
-          nextReviewDate: new Date(),
+          imageUrl: card.imageUrl || null,
+          easeFactor: card.easeFactor,
+          interval: card.interval,
+          repetitions: card.repetitions,
+          lapses: card.lapses,
+          status: card.status,
+          nextReviewDate: card.nextReviewDate,
         });
       }
 
-      // Inserir em chunks
-      const chunkSize = 50;
-      for (let i = 0; i < cardsToInsert.length; i += chunkSize) {
-        const chunk = cardsToInsert.slice(i, i + chunkSize);
-        await db.card.createMany({ data: chunk });
+      // Inserção em lotes
+      const batchSize = 75;
+      for (let i = 0; i < cardsToInsert.length; i += batchSize) {
+        const batch = cardsToInsert.slice(i, i + batchSize);
+        await db.card.createMany({ data: batch });
       }
 
       deckResults.push({
         id: newDeck.id,
         title: deckTitle,
         importedCards: cardsToInsert.length,
-        skippedDuplicates: skipped,
+        skippedDuplicates: skippedInDeck,
       });
+
       totalImported += cardsToInsert.length;
-      totalSkipped += skipped;
+      totalSkipped += skippedInDeck;
     }
 
     return NextResponse.json({
       success: true,
+      mode: "new",
       decks: deckResults,
       totalImported,
       totalSkipped,
     });
   } catch (error: any) {
-    console.error("Erro na importa\u00e7\u00e3o APKG:", error);
+    console.error("Erro na importação APKG:", error);
     return NextResponse.json(
-      { error: "Erro ao importar: " + error.message },
+      { error: "Erro ao importar pacote Anki: " + (error?.message || error) },
       { status: 500 }
     );
   }

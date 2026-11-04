@@ -158,8 +158,8 @@ export default function DeckManager({
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Erro na importa\u00e7\u00e3o");
+        const data = await res.json().catch(() => ({ error: `Falha na requisição (${res.status} ${res.statusText})` }));
+        throw new Error(data.error || "Erro na importação");
       }
 
       const data = await res.json();
@@ -174,7 +174,8 @@ export default function DeckManager({
 
       router.refresh();
     } catch (err: any) {
-      alert(err.message);
+      sound.playError();
+      alert(err.message || "Erro ao importar o arquivo .APKG. Verifique se o pacote é válido.");
     } finally {
       setIsImporting(false);
       setImportingDeckId(null);
@@ -354,7 +355,7 @@ export default function DeckManager({
                   <span>{isImporting && !importingDeckId ? "Importando..." : "Importar .APKG"}</span>
                   <input
                     type="file"
-                    accept=".apkg"
+                    accept=".apkg,application/zip,application/x-zip-compressed,application/octet-stream"
                     className="hidden"
                     onChange={(e) => handleImportApkg(e)}
                     disabled={isImporting}
@@ -625,7 +626,7 @@ export default function DeckManager({
                   )}
                   <input
                     type="file"
-                    accept=".apkg"
+                    accept=".apkg,application/zip,application/x-zip-compressed,application/octet-stream"
                     className="hidden"
                     onChange={(e) => handleImportApkg(e, deck.id)}
                     disabled={isImporting}
