@@ -54,6 +54,7 @@ interface ProcessedCard {
   front: string;
   back: string;
   extra: string;
+  tags: string[];
   imageUrl?: string | null;
   easeFactor: number;
   interval: number;
@@ -390,7 +391,7 @@ export async function POST(request: Request) {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // ETAPA 3: CONSTRUIR MAPA DE MÍDIA / IMAGENS
+    // ETAPA 3: CONSTRUIR MAPA DE MÍDIA / IMAGENS COM CARREGAMENTO ROBUSTO ASYNC
     // ═══════════════════════════════════════════════════════════════
     const mediaFilenameToZipKey: Record<string, string> = {};
     const mediaFile = zip.file("media");
@@ -412,52 +413,37 @@ export async function POST(request: Request) {
     // Cache em memória de Data URLs resolvidas para evitar reprocessamento
     const resolvedMediaCache = new Map<string, { dataUrl?: string; mimeType?: string } | null>();
 
-    const mediaResolver = (rawFilename: string) => {
-      const key = rawFilename.trim();
-      const lowerKey = key.toLowerCase();
-      const cacheHit = resolvedMediaCache.get(lowerKey);
-      if (cacheHit !== undefined) return cacheHit;
+    // Pré-carrega de forma robusta e assíncrona todas as imagens do pacote (.png, .jpg, .jpeg, .gif, .svg, .webp)
+    for (const [lowerKey, zipKey] of Object.entries(mediaFilenameToZipKey)) {
+      if (resolvedMediaCache.has(lowerKey)) continue;
 
-      const zipKey = mediaFilenameToZipKey[lowerKey] || mediaFilenameToZipKey[key];
-      if (!zipKey) {
-        resolvedMediaCache.set(lowerKey, null);
-        return null;
-      }
-
-      const zipEntry = zip.file(zipKey);
-      if (!zipEntry) {
-        resolvedMediaCache.set(lowerKey, null);
-        return null;
-      }
-
-      // Descobre MIME type pela extensão
       let mimeType = "image/jpeg";
       if (lowerKey.endsWith(".png")) mimeType = "image/png";
       else if (lowerKey.endsWith(".gif")) mimeType = "image/gif";
       else if (lowerKey.endsWith(".svg")) mimeType = "image/svg+xml";
       else if (lowerKey.endsWith(".webp")) mimeType = "image/webp";
       else if (lowerKey.endsWith(".jpg") || lowerKey.endsWith(".jpeg")) mimeType = "image/jpeg";
-      else {
-        // Se não for imagem, não embutir inline como data:image
-        resolvedMediaCache.set(lowerKey, null);
-        return null;
-      }
+      else continue;
 
-      // Obtém bytes e converte para Data URL se o arquivo for <= 2.5MB
-      try {
-        // Leitura síncrona do zip em uint8array
-        const bytes = (zipEntry as any)._data?.uncompressed ?? null;
-        if (bytes && bytes.length <= 2621440) {
-          const b64 = Buffer.from(bytes).toString("base64");
-          const res = { dataUrl: `data:${mimeType};base64,${b64}`, mimeType };
-          resolvedMediaCache.set(lowerKey, res);
-          return res;
+      const zipEntry = zip.file(zipKey);
+      if (zipEntry) {
+        try {
+          const bytes = await zipEntry.async("uint8array");
+          if (bytes && bytes.length > 0 && bytes.length <= 6 * 1024 * 1024) {
+            const b64 = Buffer.from(bytes).toString("base64");
+            resolvedMediaCache.set(lowerKey, { dataUrl: `data:${mimeType};base64,${b64}`, mimeType });
+          }
+        } catch (e) {
+          console.warn(`Aviso ao ler imagem ${lowerKey}:`, e);
         }
-      } catch {
-        // Se falhar leitura rápida, segue sem travar
       }
+    }
 
-      resolvedMediaCache.set(lowerKey, null);
+    const mediaResolver = (rawFilename: string) => {
+      const key = rawFilename.trim();
+      const lowerKey = key.toLowerCase();
+      const cacheHit = resolvedMediaCache.get(lowerKey) || resolvedMediaCache.get(key);
+      if (cacheHit !== undefined) return cacheHit;
       return null;
     };
 
@@ -721,6 +707,14 @@ export async function POST(request: Request) {
             nextReviewDate.setDate(nextReviewDate.getDate() + ivl);
           }
 
+          // Tags associadas à nota no Anki (formato " tag1 tag2 ")
+          const rawTags = String(row.tags || "");
+          const cardTags = rawTags
+            .split(/\s+/)
+            .map((t) => t.replace(/^[#_]+/, "").trim())
+            .filter((t) => t.length > 0)
+            .map((t) => `#${t.toLowerCase()}`);
+
           const primaryImage = extractedImages[0] || null;
 
           processedCards.push({
@@ -728,6 +722,7 @@ export async function POST(request: Request) {
             front,
             back,
             extra,
+            tags: cardTags,
             imageUrl: primaryImage,
             easeFactor,
             interval: ivl,
@@ -764,11 +759,20 @@ export async function POST(request: Request) {
           if (!front.trim()) front = "(Sem pergunta)";
           if (!back.trim()) back = "(Sem resposta)";
 
+          // Extrai tags da nota
+          const rawTags = String(row.tags || "");
+          const cardTags = rawTags
+            .split(/\s+/)
+            .map((t) => t.replace(/^[#_]+/, "").trim())
+            .filter((t) => t.length > 0)
+            .map((t) => `#${t.toLowerCase()}`);
+
           processedCards.push({
             deckId: 1,
             front,
             back,
             extra,
+            tags: cardTags,
             imageUrl: extractedImages[0] || null,
             easeFactor: 2.5,
             interval: 0,
@@ -822,11 +826,18 @@ export async function POST(request: Request) {
 
         existingPairSet.add(pairKey); // Evita duplicatas dentro do próprio lote importado
 
+        const extraWithTags =
+          card.tags && card.tags.length > 0 && !card.extra.includes("#")
+            ? card.extra
+              ? `${card.extra}\n\n${card.tags.join(" ")}`
+              : card.tags.join(" ")
+            : card.extra;
+
         cardsToInsert.push({
           deckId: targetDeckId,
           front: card.front,
           back: card.back,
-          extra: card.extra || "",
+          extra: extraWithTags || "",
           imageUrl: card.imageUrl || null,
           easeFactor: card.easeFactor,
           interval: card.interval,
@@ -844,7 +855,20 @@ export async function POST(request: Request) {
         await db.card.createMany({ data: batch });
       }
 
+      // Atualiza descrição do baralho alvo com as novas tags importadas
       const targetDeck = await db.deck.findUnique({ where: { id: targetDeckId } });
+      const importedTags = Array.from(new Set(processedCards.flatMap((c) => c.tags || [])));
+      if (targetDeck && importedTags.length > 0) {
+        const currentDesc = targetDeck.description || "";
+        const missingTags = importedTags.filter((t) => !currentDesc.toLowerCase().includes(t.toLowerCase()));
+        if (missingTags.length > 0) {
+          const newDesc = `${currentDesc} ${missingTags.slice(0, 6).join(" ")}`.trim();
+          await db.deck.update({
+            where: { id: targetDeckId },
+            data: { description: newDesc },
+          });
+        }
+      }
 
       return NextResponse.json({
         success: true,
@@ -902,11 +926,16 @@ export async function POST(request: Request) {
         deckTitle = `${fileBaseName} (Parte ${dId})`;
       }
 
+      // Extrai tags únicas do lote deste baralho
+      const uniqueTagsInDeck = Array.from(new Set(deckCards.flatMap((c) => c.tags || [])));
+      const tagSuffix = uniqueTagsInDeck.length > 0 ? ` • ${uniqueTagsInDeck.slice(0, 8).join(" ")}` : "";
+      const deckDescription = `Importado de pacote Anki (${deckCards.length} cards)${tagSuffix}`;
+
       // Cria o novo Deck
       const newDeck = await db.deck.create({
         data: {
           title: deckTitle,
-          description: `Importado de pacote Anki (${deckCards.length} cards)`,
+          description: deckDescription,
           icon: getDeckIcon(deckTitle),
           color: "#10b981",
         },
@@ -925,11 +954,18 @@ export async function POST(request: Request) {
         }
         seenPairSet.add(pairKey);
 
+        const extraWithTags =
+          card.tags && card.tags.length > 0 && !card.extra.includes("#")
+            ? card.extra
+              ? `${card.extra}\n\n${card.tags.join(" ")}`
+              : card.tags.join(" ")
+            : card.extra;
+
         cardsToInsert.push({
           deckId: newDeck.id,
           front: card.front,
           back: card.back,
-          extra: card.extra || "",
+          extra: extraWithTags || "",
           imageUrl: card.imageUrl || null,
           easeFactor: card.easeFactor,
           interval: card.interval,

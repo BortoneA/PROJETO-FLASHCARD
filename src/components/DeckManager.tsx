@@ -413,6 +413,16 @@ export default function DeckManager({
             <Download size={14} className="text-emerald-500" />
             <span className="hidden sm:inline">Exportar CSV</span>
           </button>
+
+          <a
+            href="/api/export-apkg?deckId=all"
+            download
+            className="btn-saas-secondary flex items-center gap-1.5"
+            title="Exportar todos os baralhos em um arquivo .APKG compatível com o Anki"
+          >
+            <Download size={14} className="text-blue-500" />
+            <span className="hidden sm:inline">Backup .APKG (Anki)</span>
+          </a>
         </div>
       </section>
 
@@ -763,6 +773,14 @@ export default function DeckManager({
                         >
                           <Plus size={13} />
                         </button>
+                        <a
+                          href={`/api/export-apkg?deckId=${deck.id}`}
+                          download
+                          className="btn-saas-secondary py-1 px-2 text-muted-foreground hover:text-foreground"
+                          title="Exportar Baralho para o Anki (.APKG)"
+                        >
+                          <Download size={13} />
+                        </a>
                       </div>
                     </td>
                   </tr>
