@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { updateDeck, updateCard, deleteCard, getCardsForDeck } from "@/app/actions/flashcards";
 import {
   X, Pencil, Trash2, Save, ChevronDown, ChevronUp,
-  Settings, BookOpen, Loader2
+  Settings, BookOpen, Loader2, Download
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import RichToolbar from "./RichToolbar";
@@ -215,14 +215,25 @@ export default function DeckEditModal({ deck, isOpen, onClose }: DeckEditModalPr
               />
             </div>
 
-            <button
-              onClick={handleSaveDeck}
-              disabled={savingDeck}
-              className="w-full btn-saas-primary flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {savingDeck ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              <span>Salvar Alterações</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSaveDeck}
+                disabled={savingDeck}
+                className="flex-1 btn-saas-primary flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {savingDeck ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                <span>Salvar Alterações</span>
+              </button>
+              <a
+                href={`/api/export-apkg?deckId=${deck.id}`}
+                download
+                className="btn-saas-secondary py-2 px-3 text-xs font-semibold flex items-center gap-1.5 hover:border-emerald-500/40"
+                title="Exportar este baralho para pacote Anki (.APKG)"
+              >
+                <Download size={14} className="text-emerald-500" />
+                <span>Exportar .APKG</span>
+              </a>
+            </div>
           </div>
 
           {/* ═══ CARDS SECTION ═══ */}
