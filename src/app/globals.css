@@ -295,6 +295,29 @@
   --muted: #94a3b8;
 }
 
+/* OLED Black Puro — Máxima eficiência energética e contraste infinito */
+.oled, [data-theme="oled"] {
+  --background: #000000 !important;
+  --foreground: #f8fafc !important;
+  --accent: #10b981 !important;
+  --accent-hover: #059669 !important;
+  --card-bg: #050608 !important;
+  --card-border: #181b22 !important;
+  --surface: #06070a !important;
+  --muted: #8b98a9 !important;
+}
+
+.oled .card-saas,
+.oled .card-duo {
+  background-color: #050608 !important;
+  border-color: #181b22 !important;
+}
+
+.oled .btn-saas-secondary {
+  background-color: #0a0c10 !important;
+  border-color: #1e232d !important;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;

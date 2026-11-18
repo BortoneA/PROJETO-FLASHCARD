@@ -15,12 +15,13 @@ import {
   Image as ImageIcon, Upload, Loader2, Pencil,
   Search, X, CheckCircle2, Sparkles, Zap, Award,
   MoreVertical, ChevronDown, ChevronUp, LayoutGrid, List,
-  Calendar, Layers, Clock, TrendingUp
+  Calendar, Layers, Clock, TrendingUp, Tag
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import AnalyticsModal from "./AnalyticsModal";
 import { useRouter } from "next/navigation";
+import { extractDeckTags, exportRetentionCSV } from "@/lib/exportRetentionCSV";
 
 interface DeckManagerProps {
   decks: any[];
@@ -92,6 +93,21 @@ export default function DeckManager({
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTab, setFilterTab] = useState<"all" | "due" | "new">("all");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  // Extract all unique tags across decks with frequency count
+  const allTags = useMemo(() => {
+    const counts: Record<string, number> = {};
+    decks.forEach((deck: any) => {
+      const tags = extractDeckTags(deck);
+      tags.forEach((t) => {
+        counts[t] = (counts[t] || 0) + 1;
+      });
+    });
+    return Object.entries(counts)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [decks]);
 
   // Create Deck form state
   const [title, setTitle] = useState("");
@@ -139,6 +155,12 @@ export default function DeckManager({
 
       if (filterTab === "due") return deck.dueCardsCount > 0;
       if (filterTab === "new") return deck.newCardsCount > 0;
+
+      if (selectedTag) {
+        const deckTags = extractDeckTags(deck);
+        if (!deckTags.includes(selectedTag)) return false;
+      }
+
       return true;
     });
 
@@ -148,7 +170,7 @@ export default function DeckManager({
       if (sortBy === "alpha") return a.title.localeCompare(b.title);
       return new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime();
     });
-  }, [decks, searchQuery, filterTab, sortBy]);
+  }, [decks, searchQuery, filterTab, sortBy, selectedTag]);
 
   const decksWithDue = decks.filter((d) => d.dueCardsCount > 0);
   const decksWithNew = decks.filter((d) => d.newCardsCount > 0);
@@ -382,6 +404,15 @@ export default function DeckManager({
             <BarChart3 size={14} className="text-blue-500" />
             <span>Métricas</span>
           </button>
+
+          <button
+            onClick={() => exportRetentionCSV({ decks, userProfile })}
+            className="btn-saas-secondary flex items-center gap-1.5"
+            title="Exportar Relatório Executivo CSV"
+          >
+            <Download size={14} className="text-emerald-500" />
+            <span className="hidden sm:inline">Exportar CSV</span>
+          </button>
         </div>
       </section>
 
@@ -558,6 +589,59 @@ export default function DeckManager({
         </div>
       </div>
 
+      {/* ═══════════ MULTIFACETED TAG FILTER BAR ═══════════ */}
+      {allTags.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          <div className="flex items-center gap-1 text-muted-foreground text-[11px] font-medium pr-1 shrink-0">
+            <Tag size={12} className="text-emerald-500" />
+            <span>Tags:</span>
+          </div>
+          <button
+            onClick={() => setSelectedTag(null)}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 transition-all ${
+              selectedTag === null
+                ? "bg-foreground text-background font-semibold shadow-xs"
+                : "bg-surface border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+            }`}
+          >
+            Todas ({decks.length})
+          </button>
+          {allTags.map(({ tag, count }) => {
+            const isSelected = selectedTag === tag;
+            return (
+              <button
+                key={tag}
+                onClick={() => setSelectedTag(isSelected ? null : tag)}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-mono shrink-0 transition-all flex items-center gap-1.5 ${
+                  isSelected
+                    ? "bg-emerald-600 text-white font-semibold shadow-xs"
+                    : "bg-surface border border-border text-muted-foreground hover:text-foreground hover:border-emerald-500/40"
+                }`}
+              >
+                <span>{tag}</span>
+                <span
+                  className={`text-[10px] px-1 py-0.2 rounded font-semibold ${
+                    isSelected ? "bg-white/20 text-white" : "bg-muted/30 text-muted-foreground"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+          {selectedTag && (
+            <button
+              onClick={() => setSelectedTag(null)}
+              className="text-[11px] text-rose-500 hover:text-rose-600 px-2 py-0.5 shrink-0 flex items-center gap-0.5 font-medium"
+              title="Limpar filtro de tag"
+            >
+              <X size={11} />
+              <span>Limpar</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ═══════════ DECKS PRESENTATION (GRID OU TABELA) ═══════════ */}
       {filteredDecks.length === 0 ? (
         <div className="card-saas p-12 text-center">
@@ -590,6 +674,7 @@ export default function DeckManager({
                   <th className="py-3 px-4 font-mono">Volume</th>
                   <th className="py-3 px-4 font-mono">Para Hoje</th>
                   <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Tags</th>
                   <th className="py-3 px-4 text-right">Ações</th>
                 </tr>
               </thead>
@@ -633,6 +718,31 @@ export default function DeckManager({
                           Em dia
                         </span>
                       )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex flex-wrap items-center gap-1 max-w-[180px]">
+                        {extractDeckTags(deck).length > 0 ? (
+                          extractDeckTags(deck).map((tag) => (
+                            <button
+                              key={tag}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTag(selectedTag === tag ? null : tag);
+                              }}
+                              className={`font-mono text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+                                selectedTag === tag
+                                  ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 font-semibold"
+                                  : "bg-muted/15 border-border/80 text-muted-foreground hover:border-foreground/30"
+                              }`}
+                              title={`Filtrar por ${tag}`}
+                            >
+                              {tag}
+                            </button>
+                          ))
+                        ) : (
+                          <span className="text-muted-foreground/40 text-[11px]">—</span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -727,6 +837,34 @@ export default function DeckManager({
                       {deck.newCardsCount} novos
                     </span>
                   </div>
+
+                  {/* Deck Tags */}
+                  {extractDeckTags(deck).length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1 mt-2.5">
+                      {extractDeckTags(deck).slice(0, 3).map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTag(selectedTag === tag ? null : tag);
+                          }}
+                          className={`font-mono text-[10px] px-1.5 py-0.5 rounded border transition-colors ${
+                            selectedTag === tag
+                              ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 font-semibold"
+                              : "bg-muted/15 border-border/80 text-muted-foreground hover:border-foreground/30"
+                          }`}
+                          title={`Filtrar por ${tag}`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                      {extractDeckTags(deck).length > 3 && (
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          +{extractDeckTags(deck).length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1094,7 +1232,12 @@ export default function DeckManager({
       </AnimatePresence>
 
       {/* ═══════════ MODAL: ANALYTICS ═══════════ */}
-      <AnalyticsModal isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} />
+      <AnalyticsModal
+        isOpen={isAnalyticsOpen}
+        onClose={() => setIsAnalyticsOpen(false)}
+        decks={decks}
+        userProfile={userProfile}
+      />
 
       {/* ═══════════ MODAL: SPEED RUN ═══════════ */}
       <SpeedRunModal

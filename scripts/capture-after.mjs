@@ -58,6 +58,19 @@ async function run() {
     await page.close();
   }
 
+  // OLED Black Mode (Desktop & Mobile)
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto("http://localhost:3000", { waitUntil: "networkidle" });
+    await page.evaluate(() => {
+      document.documentElement.classList.add("dark", "oled");
+      document.documentElement.setAttribute("data-theme", "oled");
+    });
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: path.join(OUT_DIR, `home_oled_1440x900.png`), fullPage: true });
+    await page.close();
+  }
+
   // Table View Mode (click table view switch button)
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

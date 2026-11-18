@@ -2,16 +2,18 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-type Theme = "light" | "dark";
+export type Theme = "light" | "dark" | "oled";
 
 interface ThemeContextType {
   theme: Theme;
   toggle: () => void;
+  setTheme: (t: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: "dark",
   toggle: () => {},
+  setTheme: () => {},
 });
 
 export function useTheme() {
@@ -19,17 +21,17 @@ export function useTheme() {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // Read persisted preference or fallback to system
-    const stored = localStorage.getItem("anki-pro-theme") as Theme | null;
-    if (stored === "light" || stored === "dark") {
-      setTheme(stored);
+    const stored = localStorage.getItem("kortex-theme") || localStorage.getItem("anki-pro-theme");
+    if (stored === "light" || stored === "dark" || stored === "oled") {
+      setThemeState(stored as Theme);
     } else {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(prefersDark ? "dark" : "light");
+      setThemeState(prefersDark ? "dark" : "light");
     }
     setMounted(true);
   }, []);
@@ -37,25 +39,43 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!mounted) return;
     const root = document.documentElement;
+
+    root.classList.remove("dark", "oled");
+    root.removeAttribute("data-theme");
+
     if (theme === "dark") {
       root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
+    } else if (theme === "oled") {
+      root.classList.add("dark", "oled");
+      root.setAttribute("data-theme", "oled");
     }
+
     // Update meta theme-color for mobile browser chrome
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) {
-      meta.setAttribute("content", theme === "dark" ? "#000000" : "#f5f5f7");
+      meta.setAttribute(
+        "content",
+        theme === "oled" ? "#000000" : theme === "dark" ? "#090a0f" : "#f8fafc"
+      );
     }
-    localStorage.setItem("anki-pro-theme", theme);
+
+    localStorage.setItem("kortex-theme", theme);
   }, [theme, mounted]);
 
   const toggle = useCallback(() => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setThemeState((prev) => {
+      if (prev === "light") return "dark";
+      if (prev === "dark") return "oled";
+      return "light";
+    });
+  }, []);
+
+  const setTheme = useCallback((t: Theme) => {
+    setThemeState(t);
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
+    <ThemeContext.Provider value={{ theme, toggle, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

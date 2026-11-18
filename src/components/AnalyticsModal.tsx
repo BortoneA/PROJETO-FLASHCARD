@@ -4,13 +4,24 @@ import { useEffect, useState } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import { getRetentionAnalytics } from "@/app/actions/flashcards";
-import { BarChart3, X, Target, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
+import { BarChart3, X, Target, TrendingUp, CheckCircle2, XCircle, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "./ThemeProvider";
+import { exportRetentionCSV } from "@/lib/exportRetentionCSV";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
-export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function AnalyticsModal({
+  isOpen,
+  onClose,
+  decks = [],
+  userProfile,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  decks?: any[];
+  userProfile?: any;
+}) {
   const [data, setData] = useState<{ totalReviews: number; ratingsCount: Record<number, number> } | null>(null);
   const { theme } = useTheme();
 
@@ -139,12 +150,22 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
               </div>
             )}
 
-            <button
-              onClick={onClose}
-              className="w-full btn-saas-secondary py-2 text-xs font-semibold"
-            >
-              Fechar
-            </button>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => exportRetentionCSV({ analytics: data, decks, userProfile })}
+                className="flex-1 btn-saas-secondary py-2 text-xs font-semibold flex items-center justify-center gap-1.5 hover:border-emerald-500/40"
+                title="Exportar planilha CSV com métricas e retenção detalhada"
+              >
+                <Download size={14} className="text-emerald-500" />
+                <span>Exportar CSV</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="flex-1 btn-saas-primary py-2 text-xs font-semibold"
+              >
+                Fechar
+              </button>
+            </div>
           </motion.div>
         </div>
       )}
