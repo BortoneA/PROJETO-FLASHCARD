@@ -14,7 +14,7 @@ export function SoundToggle() {
   }, []);
 
   if (!mounted) {
-    return <div className="w-9 h-9 sm:w-10 sm:h-10" />;
+    return <div className="w-8 h-8 sm:w-8.5 sm:h-8.5" />;
   }
 
   const handleToggle = () => {
@@ -28,14 +28,14 @@ export function SoundToggle() {
   return (
     <button
       onClick={handleToggle}
-      className="btn-duo-white w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-zinc-600 dark:text-zinc-300"
+      className="btn-saas-secondary w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground"
       aria-label={muted ? "Ativar Efeitos Sonoros" : "Desativar Efeitos Sonoros"}
       title={muted ? "Ativar Efeitos Sonoros" : "Desativar Efeitos Sonoros"}
     >
       {muted ? (
-        <VolumeX size={18} className="text-rose-500" />
+        <VolumeX size={15} className="text-rose-500" />
       ) : (
-        <Volume2 size={18} className="text-[#58cc02]" />
+        <Volume2 size={15} className="text-emerald-500" />
       )}
     </button>
   );

@@ -81,11 +81,11 @@ export default function RichToolbar({ textareaRef, value, onChange }: RichToolba
   ];
 
   return (
-    <div className="flex items-center gap-0.5 flex-wrap px-1 py-1.5 bg-zinc-100/80 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/50 rounded-t-xl transition-colors">
+    <div className="flex items-center gap-0.5 flex-wrap px-1.5 py-1 bg-muted/20 border-b border-border transition-colors">
       {tools.map((tool, i) => {
         if ("divider" in tool && tool.divider) {
           return (
-            <div key={`div-${i}`} className="w-px h-5 bg-zinc-300 dark:bg-zinc-600 mx-0.5" />
+            <div key={`div-${i}`} className="w-px h-4 bg-border mx-1" />
           );
         }
 
@@ -96,9 +96,9 @@ export default function RichToolbar({ textareaRef, value, onChange }: RichToolba
             type="button"
             onClick={tool.action}
             title={tool.label}
-            className="p-1.5 rounded-lg text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200/90 dark:hover:bg-zinc-700/90 transition-all active:scale-90 touch-manipulation"
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-all active:scale-95 touch-manipulation"
           >
-            <Icon size={15} strokeWidth={2.2} />
+            <Icon size={14} strokeWidth={2} />
           </button>
         );
       })}

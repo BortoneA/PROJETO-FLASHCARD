@@ -21,10 +21,28 @@ export default async function StudyPage({
     deckTitle = deck.title;
   }
 
-  const cards = await getDueCardsForDeck(deckId);
+  let cards = await getDueCardsForDeck(deckId);
+
+  // If no cards are strictly due, provide cards for free review so the user is never blocked from studying
+  if (cards.length === 0) {
+    if (deckId === "all") {
+      cards = await db.card.findMany({
+        include: { deck: true },
+        take: 30,
+        orderBy: { updatedAt: "desc" },
+      });
+    } else {
+      cards = await db.card.findMany({
+        where: { deckId },
+        include: { deck: true },
+        take: 30,
+        orderBy: { updatedAt: "desc" },
+      });
+    }
+  }
 
   return (
-    <main className="min-h-screen bg-[#f7f7f7] dark:bg-[#131f24] text-foreground antialiased transition-colors">
+    <main className="min-h-screen bg-background text-foreground antialiased transition-colors">
       <FlashcardDeck deckId={deckId} deckTitle={deckTitle} initialCards={cards} />
     </main>
   );

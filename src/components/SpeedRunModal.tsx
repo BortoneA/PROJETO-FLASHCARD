@@ -5,10 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { sound } from "@/lib/sound";
 import { triggerConfetti } from "@/lib/confetti";
 import { submitSpeedRunSession } from "@/app/actions/flashcards";
-import Mascot from "./Mascot";
 import {
   X, Zap, Timer, Flame, Star, Trophy,
-  RotateCcw, Check, Sparkles, AlertCircle, ArrowRight
+  RotateCcw, Check, Sparkles, CheckCircle2
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -95,13 +94,12 @@ export default function SpeedRunModal({
     if (timerRef.current) clearInterval(timerRef.current);
     setGameState("finished");
 
-    // Bonus XP formula: 10 XP per correct + combo bonus
     const bonusXp = finalScore * 10 + finalMaxCombo * 5;
     setEarnedBonusXp(bonusXp);
 
     if (finalScore > 0) {
       sound.playLevelUp();
-      triggerConfetti({ count: 80 });
+      triggerConfetti({ count: 60 });
     }
 
     try {
@@ -109,7 +107,7 @@ export default function SpeedRunModal({
       await submitSpeedRunSession(finalAnswered, finalScore, bonusXp);
       if (onSessionComplete) onSessionComplete();
     } catch (err) {
-      console.error("Erro ao salvar sess\u00e3o speed run:", err);
+      console.error("Erro ao salvar sessão speed run:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -204,56 +202,51 @@ export default function SpeedRunModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
       <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="card-duo bg-white dark:bg-[#182228] border-2 border-zinc-200 dark:border-[#28353d] w-full max-w-lg p-5 sm:p-7 shadow-2xl relative overflow-hidden flex flex-col min-h-[460px] justify-between"
+        initial={{ scale: 0.98, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.98, opacity: 0 }}
+        className="card-saas w-full max-w-lg p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col min-h-[440px] justify-between"
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-2xl btn-duo-white text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-100 z-10"
+          className="absolute top-4 right-4 p-1 rounded-md text-muted-foreground hover:text-foreground z-10"
         >
-          <X size={18} strokeWidth={3} />
+          <X size={18} />
         </button>
 
         {/* ═══════════ STATE 1: READY SCREEN ═══════════ */}
         {gameState === "ready" && (
           <div className="flex flex-col items-center text-center my-auto py-4">
-            <div className="mb-4">
-              <Mascot size={110} mood="fire" />
+            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mx-auto mb-3">
+              <Zap size={24} />
             </div>
 
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-black uppercase tracking-widest text-[#ff9600] bg-amber-50 dark:bg-amber-500/15 px-3 py-1 rounded-xl border border-amber-300 dark:border-amber-500/30 flex items-center gap-1.5">
-                <Zap size={14} className="fill-current text-[#ff9600]" />
-                Desafio Relâmpago 60s
-              </span>
-            </div>
+            <span className="text-[11px] font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold mb-1">
+              Desafio Relâmpago
+            </span>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white mt-1 mb-2">
-              {"Corrida de Flashcards!"}
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mb-2">
+              Sprint de 60 Segundos
             </h2>
 
-            <p className="text-xs sm:text-sm font-semibold text-zinc-600 dark:text-zinc-300 max-w-sm mb-6 leading-relaxed">
-              {"Responda o m\u00e1ximo de cards que puder em "}
-              <strong className="text-[#ff9600]">60 segundos</strong>
-              {". Acertos em sequ\u00eancia criam combos que multiplicam seu XP!"}
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mb-6 leading-relaxed">
+              Responda o máximo de cartões que puder em 60 segundos. Respostas corretas consecutivas ativam multiplicadores de combo e bônus de XP.
             </p>
 
             {cardsPool.length === 0 ? (
-              <div className="card-duo bg-amber-50 dark:bg-amber-500/10 border border-amber-300 p-4 rounded-2xl text-amber-700 dark:text-amber-400 text-xs font-bold mb-4">
-                {"Voc\u00ea precisa criar ao menos 1 card para disputar o Desafio Rel\u00e2mpago!"}
+              <div className="p-3 rounded-lg border border-border bg-muted/10 text-xs text-muted-foreground mb-4">
+                Adicione ao menos 1 cartão em seus baralhos para iniciar o desafio.
               </div>
             ) : (
               <button
                 onClick={handleStart}
-                className="w-full btn-duo-orange py-4 rounded-2xl font-black text-sm uppercase tracking-wider shadow-md flex items-center justify-center gap-2"
+                className="w-full btn-saas-primary py-2.5 text-xs font-semibold flex items-center justify-center gap-2"
               >
-                <Zap size={18} className="fill-current" />
-                <span>Começar Desafio (60s)</span>
+                <Zap size={14} className="text-amber-400" />
+                <span>Iniciar Sprint (60s)</span>
               </button>
             )}
           </div>
@@ -263,35 +256,35 @@ export default function SpeedRunModal({
         {gameState === "playing" && (
           <div className="flex flex-col flex-1 justify-between">
             {/* Top HUD */}
-            <div className="flex items-center justify-between gap-2 mb-4">
-              {/* Timer Pill */}
+            <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-border">
+              {/* Timer */}
               <div
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border-2 font-black text-xs sm:text-sm transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border font-mono font-bold text-xs ${
                   timeLeft <= 10
-                    ? "bg-rose-50 dark:bg-rose-500/20 border-rose-400 text-rose-600 dark:text-rose-400 animate-pulse"
-                    : "bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 text-blue-600 dark:text-blue-400"
+                    ? "bg-rose-500/10 border-rose-500/30 text-rose-500 animate-pulse"
+                    : "bg-muted/15 border-border text-foreground"
                 }`}
               >
-                <Timer size={16} strokeWidth={2.5} />
+                <Timer size={13} />
                 <span>{timeLeft}s</span>
               </div>
 
               {/* Combo Multiplier */}
               <div
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-2xl border-2 font-black text-xs sm:text-sm transition-all ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md border font-mono text-xs ${
                   combo >= 3
-                    ? "bg-amber-100 dark:bg-amber-500/20 border-amber-400 text-amber-600 dark:text-amber-400 scale-105"
-                    : "bg-zinc-100 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] text-zinc-500"
+                    ? "bg-amber-500/10 border-amber-500/30 text-amber-500 font-bold"
+                    : "bg-muted/15 border-border text-muted-foreground"
                 }`}
               >
-                <Flame size={16} className={combo >= 3 ? "fill-amber-500 text-amber-500" : ""} />
+                <Flame size={13} className={combo >= 3 ? "fill-amber-500" : ""} />
                 <span>Combo x{combo}</span>
               </div>
 
-              {/* Score Points */}
-              <div className="flex items-center gap-1 px-3 py-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/15 border-2 border-emerald-300 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-black text-xs sm:text-sm">
-                <Star size={15} className="fill-emerald-500" />
-                <span>{score}</span>
+              {/* Score */}
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs">
+                <CheckCircle2 size={13} />
+                <span>{score} pts</span>
               </div>
             </div>
 
@@ -301,31 +294,31 @@ export default function SpeedRunModal({
                 sound.playFlip();
                 setIsFlipped((prev) => !prev);
               }}
-              className="w-full cursor-pointer select-none my-2 min-h-[220px] sm:min-h-[260px] flex items-center justify-center"
+              className="w-full cursor-pointer select-none my-auto min-h-[200px] flex items-center justify-center"
             >
               <AnimatePresence mode="wait">
                 <motion.div
                   key={`${currentIndex}-${isFlipped ? "back" : "front"}`}
-                  initial={{ rotateY: isFlipped ? -45 : 45, opacity: 0 }}
+                  initial={{ rotateY: isFlipped ? -25 : 25, opacity: 0 }}
                   animate={{ rotateY: 0, opacity: 1 }}
-                  exit={{ rotateY: isFlipped ? 45 : -45, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="card-duo w-full h-full p-6 bg-zinc-50 dark:bg-[#131f24] border-2 border-zinc-200 dark:border-[#28353d] rounded-3xl flex flex-col items-center justify-center text-center shadow-sm"
+                  exit={{ rotateY: isFlipped ? 25 : -25, opacity: 0 }}
+                  transition={{ duration: 0.12 }}
+                  className="w-full p-5 bg-muted/10 border border-border rounded-xl flex flex-col items-center justify-center text-center"
                 >
-                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">
                     {currentCard?.deckTitle || "Flashcard"} • {isFlipped ? "Resposta" : "Pergunta"}
                   </span>
 
-                  <div className="text-lg sm:text-xl font-black text-zinc-900 dark:text-white leading-relaxed break-words max-w-full">
+                  <div className="text-base sm:text-lg font-semibold text-foreground leading-relaxed break-words max-w-full">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {isFlipped ? currentCard?.back || "" : currentCard?.front || ""}
                     </ReactMarkdown>
                   </div>
 
                   {!isFlipped && (
-                    <span className="text-[11px] font-bold text-zinc-400 mt-4 flex items-center gap-1">
-                      <RotateCcw size={12} />
-                      Toque para ver a resposta
+                    <span className="text-[10px] text-muted-foreground mt-4 flex items-center gap-1">
+                      <RotateCcw size={10} />
+                      Espaço ou toque para ver resposta
                     </span>
                   )}
                 </motion.div>
@@ -333,31 +326,31 @@ export default function SpeedRunModal({
             </div>
 
             {/* Dual Action Grading Buttons */}
-            <div className="pt-2">
+            <div className="pt-3 border-t border-border">
               {!isFlipped ? (
                 <button
                   onClick={() => {
                     sound.playFlip();
                     setIsFlipped(true);
                   }}
-                  className="w-full btn-duo-blue py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider"
+                  className="w-full btn-saas-primary py-2 text-xs font-semibold"
                 >
                   Ver Resposta [Espaço]
                 </button>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => handleAnswer(false)}
-                    className="btn-duo-red py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-1.5"
+                    className="p-2.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 text-xs font-semibold flex items-center justify-center gap-1.5"
                   >
-                    <X size={18} strokeWidth={3} />
+                    <X size={14} />
                     <span>Errei [1]</span>
                   </button>
                   <button
                     onClick={() => handleAnswer(true)}
-                    className="btn-duo-green py-3.5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-1.5"
+                    className="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-xs font-semibold flex items-center justify-center gap-1.5"
                   >
-                    <Check size={18} strokeWidth={3} />
+                    <Check size={14} />
                     <span>Acertei [2]</span>
                   </button>
                 </div>
@@ -369,59 +362,55 @@ export default function SpeedRunModal({
         {/* ═══════════ STATE 3: FINISHED SCREEN ═══════════ */}
         {gameState === "finished" && (
           <div className="flex flex-col items-center text-center my-auto py-2">
-            <div className="mb-3">
-              <Mascot size={110} mood="cheering" />
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto mb-3">
+              <Trophy size={24} />
             </div>
 
-            <span className="text-xs font-black uppercase tracking-widest text-[#58cc02]">
-              {"Tempo Esgotado!"}
+            <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-semibold mb-1">
+              Sprint Finalizado
             </span>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white mt-1 mb-2">
-              {"Sensacional!"}
+            <h2 className="text-xl font-bold text-foreground mb-2">
+              Resultado do Desafio
             </h2>
 
-            <p className="text-xs sm:text-sm font-semibold text-zinc-600 dark:text-zinc-300 mb-5">
-              {"Voc\u00ea completou o Desafio Rel\u00e2mpago de 60 segundos com sucesso."}
+            <p className="text-xs text-muted-foreground mb-5">
+              Excelente esforço de recall rápido em 60 segundos.
             </p>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-3 gap-2.5 w-full mb-6">
-              <div className="card-duo bg-zinc-50 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] p-3 rounded-2xl">
-                <span className="text-[10px] text-zinc-500 font-black uppercase block">Respondidos</span>
-                <span className="text-lg font-black text-zinc-900 dark:text-white">{totalAnswered}</span>
+            <div className="grid grid-cols-3 gap-2 w-full mb-5 text-center font-mono">
+              <div className="p-2.5 rounded-lg border border-border bg-muted/10">
+                <span className="text-[10px] text-muted-foreground uppercase block">Respondidos</span>
+                <span className="text-base font-bold text-foreground">{totalAnswered}</span>
               </div>
 
-              <div className="card-duo bg-emerald-50 dark:bg-emerald-500/15 border-emerald-300 dark:border-emerald-500/30 p-3 rounded-2xl">
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase block">Acertos</span>
-                <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{score}</span>
+              <div className="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10">
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase block">Acertos</span>
+                <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">{score}</span>
               </div>
 
-              <div className="card-duo bg-amber-50 dark:bg-amber-500/15 border-amber-300 dark:border-amber-500/30 p-3 rounded-2xl">
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-black uppercase block">Maior Combo</span>
-                <span className="text-lg font-black text-amber-600 dark:text-amber-400 flex items-center justify-center gap-0.5">
-                  <Flame size={14} className="fill-amber-500" /> {maxCombo}
-                </span>
+              <div className="p-2.5 rounded-lg border border-amber-500/20 bg-amber-500/10">
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 uppercase block">Combo Máx</span>
+                <span className="text-base font-bold text-amber-600 dark:text-amber-400">{maxCombo}x</span>
               </div>
             </div>
 
-            {/* XP Badge Banner */}
-            <div className="w-full bg-[#ffc800] text-zinc-950 p-3.5 rounded-2xl font-black text-sm mb-6 flex items-center justify-center gap-2 border-2 border-yellow-300 shadow-md">
-              <Star size={18} className="fill-current text-zinc-950" />
-              <span>+{earnedBonusXp} Cristais de XP Bônus Conquistados!</span>
+            <div className="w-full bg-primary/10 border border-primary/20 p-2.5 rounded-lg text-xs font-mono font-semibold text-primary dark:text-blue-400 mb-5 flex items-center justify-center gap-1.5">
+              <Sparkles size={14} className="text-amber-500" />
+              <span>+{earnedBonusXp} XP Bônus Conquistados</span>
             </div>
 
-            <div className="flex gap-3 w-full">
+            <div className="flex gap-2 w-full">
               <button
                 onClick={handleStart}
-                className="flex-1 btn-duo-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5"
+                className="flex-1 btn-saas-secondary text-xs"
               >
-                <RotateCcw size={14} strokeWidth={2.5} />
-                <span>Tentar Novamente</span>
+                Tentar Novamente
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 btn-duo-green py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider shadow-md"
+                className="flex-1 btn-saas-primary text-xs"
               >
                 Concluir
               </button>

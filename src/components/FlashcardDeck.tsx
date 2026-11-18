@@ -1,20 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { submitCardReview } from "@/app/actions/flashcards";
 import { sound } from "@/lib/sound";
 import { triggerConfetti, triggerStarBurst } from "@/lib/confetti";
 import { speakText } from "@/lib/tts";
 import {
-  X, Flame, Gem, Star, Trophy, RotateCcw,
-  Sparkles, CheckCircle2, ChevronRight, Volume2,
-  Keyboard, Check, HelpCircle
+  X, Flame, Trophy, RotateCcw,
+  CheckCircle2, Volume2, Keyboard, Check,
+  ArrowRight, Sparkles, Layers, BookOpen, Clock
 } from "lucide-react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import Mascot from "./Mascot";
 
 interface Card {
   id: string;
@@ -31,10 +30,34 @@ interface Card {
 }
 
 const ANSWER_BUTTONS = [
-  { rating: 1 as const, label: "Errei", time: "10 min", btnClass: "btn-duo-red", key: "1" },
-  { rating: 2 as const, label: "Dif\u00edcil", time: "1 dia", btnClass: "btn-duo-orange", key: "2" },
-  { rating: 3 as const, label: "Bom", time: "3 dias", btnClass: "btn-duo-green", key: "3" },
-  { rating: 4 as const, label: "F\u00e1cil", time: "4 dias", btnClass: "btn-duo-blue", key: "4" },
+  {
+    rating: 1 as const,
+    label: "Errei",
+    time: "~10m",
+    key: "1",
+    styles: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/50"
+  },
+  {
+    rating: 2 as const,
+    label: "Difícil",
+    time: "~1d",
+    key: "2",
+    styles: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50"
+  },
+  {
+    rating: 3 as const,
+    label: "Bom",
+    time: "~3d",
+    key: "3",
+    styles: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50"
+  },
+  {
+    rating: 4 as const,
+    label: "Fácil",
+    time: "~4d",
+    key: "4",
+    styles: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 hover:border-blue-500/50"
+  },
 ] as const;
 
 export default function FlashcardDeck({
@@ -60,8 +83,6 @@ export default function FlashcardDeck({
 
   // Text-to-Speech State
   const [isSpeaking, setIsSpeaking] = useState(false);
-
-  // Drag Gesture State
   const [dragOffset, setDragOffset] = useState(0);
 
   const [floatingXp, setFloatingXp] = useState<number | null>(null);
@@ -77,7 +98,7 @@ export default function FlashcardDeck({
     if (cards.length > 0 && currentIndex >= cards.length && !hasTriggeredEndRef.current) {
       hasTriggeredEndRef.current = true;
       sound.playLevelUp();
-      triggerConfetti({ count: 90 });
+      triggerConfetti({ count: 70 });
     }
   }, [currentIndex, cards.length]);
 
@@ -107,7 +128,7 @@ export default function FlashcardDeck({
     if (rating >= 3) {
       sound.playSuccess(rating);
       if (rating === 4) {
-        triggerConfetti({ count: 50, origin: { y: 0.75 } });
+        triggerConfetti({ count: 35, origin: { y: 0.8 } });
       }
     } else {
       sound.playError();
@@ -127,7 +148,7 @@ export default function FlashcardDeck({
         setLevelUpModal({ level: res.newLevel, title: res.newTitle });
       }
     } catch (err) {
-      console.error("Erro na sincroniza\u00e7\u00e3o:", err);
+      console.error("Erro na sincronização:", err);
     } finally {
       setIsSyncing(false);
     }
@@ -148,98 +169,85 @@ export default function FlashcardDeck({
     setTypedAnswer("");
     setHasSubmittedTyped(false);
     setDragOffset(0);
+    setCurrentIndex((prev) => prev + 1);
+  }, [currentCard, isSyncing]);
 
-    if (currentIndex < cards.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    } else {
-      setCurrentIndex(cards.length);
-    }
-  }, [currentCard, isSyncing, currentIndex, cards.length]);
-
-  // Type answer verification
-  const handleVerifyTyped = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!typedAnswer.trim()) return;
-    setHasSubmittedTyped(true);
-    sound.playFlip();
-    setIsFlipped(true);
-  };
-
-  // Keyboard controls
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // If typing in input, let default typing happen
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        if (e.code === "Enter" && isTypeMode && !hasSubmittedTyped) {
-          e.preventDefault();
-          handleVerifyTyped();
-        }
+      // Don't trigger shortcuts if user is typing inside an input or textarea
+      if (["INPUT", "TEXTAREA"].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
 
       if (e.code === "Space") {
         e.preventDefault();
         handleFlip();
-      } else if (isFlipped && ["Digit1", "Digit2", "Digit3", "Digit4"].includes(e.code)) {
-        const ratingMap: Record<string, 1 | 2 | 3 | 4> = {
-          Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4,
-        };
-        handleAnswer(ratingMap[e.code]);
+      } else if (isFlipped) {
+        if (e.key === "1") handleAnswer(1);
+        if (e.key === "2") handleAnswer(2);
+        if (e.key === "3") handleAnswer(3);
+        if (e.key === "4") handleAnswer(4);
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFlipped, handleAnswer, handleFlip, isTypeMode, hasSubmittedTyped, typedAnswer]);
+  }, [handleFlip, handleAnswer, isFlipped]);
 
-  // ═══════════ COMPLETION SCREEN (DUOLINGO LESSON COMPLETE) ═══════════
-  if (!currentCard || cards.length === 0 || currentIndex >= cards.length) {
+  const handleVerifyTyped = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!typedAnswer.trim()) return;
+    setHasSubmittedTyped(true);
+    setIsFlipped(true);
+  };
+
+  // ═══════════ SESSION FINISHED SCREEN ═══════════
+  if (currentIndex >= cards.length) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[85vh] text-center px-4 py-8">
+      <div className="max-w-md mx-auto px-4 py-12 flex flex-col items-center justify-center min-h-[80vh]">
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
+          initial={{ scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="card-duo bg-white dark:bg-[#182228] p-8 sm:p-10 max-w-md w-full shadow-xl transition-colors border-2 border-zinc-200 dark:border-[#28353d]"
+          transition={{ duration: 0.2 }}
+          className="card-saas p-7 sm:p-8 w-full shadow-lg text-center"
         >
-          {/* Cheering Mascot */}
-          <div className="mb-5 flex justify-center">
-            <Mascot size={130} mood="cheering" className="animate-bounce" />
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto mb-4">
+            <Trophy size={24} />
           </div>
 
-          <span className="text-xs font-black uppercase tracking-widest text-[#58cc02]">
-            {"Li\u00e7\u00e3o Conclu\u00edda!"}
+          <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold block mb-1">
+            Sessão Concluída
           </span>
 
-          <h2 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white mt-1 mb-2">
-            {cards.length === 0 ? "Tudo Zerado!" : "Mandou muito bem!"}
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            {cards.length === 0 ? "Fila Zerada!" : "Revisões Concluídas"}
           </h2>
 
-          <p className="text-xs sm:text-sm font-semibold text-zinc-600 dark:text-zinc-400 mb-6 leading-relaxed">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 mb-5 leading-relaxed">
             {cards.length === 0 ? (
-              <span>{"Nenhum card precisando de revis\u00e3o no momento."}</span>
+              <span>Nenhum cartão precisa de revisão no momento para este baralho.</span>
             ) : (
               <span>
-                {"Voc\u00ea praticou "}
-                <strong className="text-[#58cc02]">{completedCount} cards</strong>
-                {" com maestria!"}
+                Você revisou com sucesso <strong className="text-foreground font-mono">{completedCount} cartões</strong>.
               </span>
             )}
           </p>
 
           {completedCount > 0 && (
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="card-duo bg-zinc-50 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] p-3.5">
-                <span className="text-[10px] text-zinc-500 font-black uppercase tracking-wider block">
-                  Cards Revisados
+            <div className="grid grid-cols-2 gap-2.5 mb-6">
+              <div className="p-3 rounded-lg bg-muted/15 border border-border">
+                <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
+                  Cartões Estudados
                 </span>
-                <span className="text-xl font-black text-zinc-900 dark:text-white">{completedCount}</span>
+                <span className="text-xl font-bold font-mono text-foreground">{completedCount}</span>
               </div>
-              <div className="card-duo bg-amber-50 dark:bg-amber-500/15 border-2 border-amber-300 dark:border-amber-500/30 p-3.5">
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-black uppercase tracking-wider block">
-                  {"Sequ\u00eancia"}
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold uppercase tracking-wider block">
+                  Sequência Ativa
                 </span>
-                <span className="text-xl font-black text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
-                  <Flame size={18} className="fill-amber-500" /> {streak}
+                <span className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
+                  <Flame size={16} className="fill-amber-500" /> {streak}d
                 </span>
               </div>
             </div>
@@ -247,9 +255,9 @@ export default function FlashcardDeck({
 
           <Link
             href="/"
-            className="w-full btn-duo-green py-4 rounded-2xl font-black text-sm uppercase tracking-wider block shadow-md text-center"
+            className="w-full btn-saas-primary py-2.5 text-xs font-semibold block text-center"
           >
-            Continuar
+            Voltar ao Painel
           </Link>
         </motion.div>
       </div>
@@ -261,50 +269,49 @@ export default function FlashcardDeck({
     hasSubmittedTyped &&
     typedAnswer.trim().toLowerCase() === currentCard.back.trim().toLowerCase();
 
-  // ═══════════ DUOLINGO STUDY VIEW ═══════════
   return (
-    <div className="max-w-xl mx-auto px-4 py-4 sm:py-6 flex flex-col items-center relative min-h-screen">
-      {/* Floating XP Badge */}
+    <div className="max-w-2xl mx-auto px-4 py-4 sm:py-6 flex flex-col items-center relative min-h-screen">
+      {/* Floating XP Notification */}
       <AnimatePresence>
         {floatingXp !== null && (
           <motion.div
-            initial={{ opacity: 0, y: 15, scale: 0.9 }}
-            animate={{ opacity: 1, y: -20, scale: 1.1 }}
-            exit={{ opacity: 0, y: -40, scale: 0.9 }}
-            transition={{ duration: 0.4 }}
-            className="absolute top-16 z-40 bg-[#ffc800] text-zinc-950 px-4 py-2 rounded-2xl font-black text-sm shadow-xl flex items-center gap-1.5 border-2 border-yellow-300"
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: -15, scale: 1 }}
+            exit={{ opacity: 0, y: -30, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+            className="absolute top-14 z-40 bg-surface text-foreground px-3.5 py-1.5 rounded-full font-mono font-bold text-xs shadow-md border border-border flex items-center gap-1.5"
           >
-            <Star size={16} className="fill-current text-zinc-950" />
+            <Sparkles size={14} className="text-amber-500" />
             <span>+{floatingXp} XP</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Level Up Modal */}
+      {/* Level Up Notification Modal */}
       <AnimatePresence>
         {levelUpModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="card-duo bg-white dark:bg-[#182228] border-2 border-zinc-200 dark:border-[#28353d] p-7 rounded-3xl shadow-2xl max-w-xs w-full text-center"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="card-saas p-6 rounded-xl shadow-xl max-w-xs w-full text-center"
             >
-              <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-3xl flex items-center justify-center mx-auto mb-4 border-2 border-amber-300">
-                <Trophy size={36} />
+              <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-xl flex items-center justify-center mx-auto mb-3 border border-amber-500/20">
+                <Trophy size={24} />
               </div>
-              <span className="text-[11px] uppercase font-black tracking-wider text-amber-500">
-                {"Novo N\u00edvel!"}
+              <span className="text-[10px] uppercase font-mono font-semibold tracking-wider text-amber-500">
+                Avanço de Nível
               </span>
-              <h2 className="text-2xl font-black text-zinc-900 dark:text-white mt-1 mb-1">
-                {"N\u00edvel"} {levelUpModal.level}
+              <h2 className="text-xl font-bold text-foreground mt-0.5">
+                Nível {levelUpModal.level}
               </h2>
-              <p className="text-sm font-bold text-[#58cc02] mb-5">
+              <p className="text-xs text-muted-foreground mt-1 mb-4">
                 {levelUpModal.title}
               </p>
               <button
                 onClick={() => setLevelUpModal(null)}
-                className="w-full btn-duo-green py-3 rounded-2xl font-black text-xs uppercase tracking-wider"
+                className="w-full btn-saas-primary text-xs"
               >
                 Continuar
               </button>
@@ -313,42 +320,24 @@ export default function FlashcardDeck({
         )}
       </AnimatePresence>
 
-      {/* ═══════════ TOP LESSON BAR (DUOLINGO STYLE) ═══════════ */}
-      <div className="w-full flex items-center gap-3 sm:gap-4 mb-3">
-        {/* Close Button ✕ */}
+      {/* ═══════════ TOP STUDY APP BAR ═══════════ */}
+      <div className="w-full flex items-center justify-between gap-3 mb-2">
         <Link
           href="/"
-          className="w-10 h-10 rounded-2xl btn-duo-white flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white shrink-0"
-          title="Sair da li\u00e7\u00e3o"
+          className="btn-saas-secondary p-1.5 rounded-lg text-muted-foreground hover:text-foreground"
+          title="Sair do Estudo (Esc)"
         >
-          <X size={20} strokeWidth={3} />
+          <X size={16} />
         </Link>
 
-        {/* Duolingo Chunky Progress Bar */}
-        <div className="flex-1 h-4 bg-zinc-200 dark:bg-[#131f24] rounded-full border-2 border-zinc-300 dark:border-[#28353d] p-0.5 overflow-hidden">
-          <div
-            className="h-full bg-[#58cc02] rounded-full transition-all duration-300 relative overflow-hidden shadow-[inset_0_-2px_0_rgba(0,0,0,0.2)]"
-            style={{ width: `${progress}%` }}
-          >
-            {/* Glossy highlight stripe */}
-            <div className="absolute inset-x-0 top-0 h-[40%] bg-white/30 rounded-full" />
-          </div>
+        {/* Deck Title & Index */}
+        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <span className="font-semibold text-foreground truncate max-w-[200px] sm:max-w-xs">
+            {deckTitle}
+          </span>
+          <span>•</span>
+          <span className="font-mono">{currentIndex + 1} de {totalCards}</span>
         </div>
-
-        {/* Quick Streak Badge */}
-        {streak > 0 && (
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-2xl bg-amber-50 dark:bg-amber-500/15 border-2 border-amber-300 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 font-black text-xs shrink-0">
-            <Flame size={14} className="fill-amber-500" />
-            <span>{streak}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Top Utility Bar: Mode Toggle & Instructions */}
-      <div className="w-full flex items-center justify-between gap-2 mb-4 px-1">
-        <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
-          Card {currentIndex + 1} de {totalCards}
-        </span>
 
         {/* Type Mode Toggle Button */}
         <button
@@ -356,20 +345,28 @@ export default function FlashcardDeck({
             sound.playClick();
             setIsTypeMode((prev) => !prev);
           }}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black transition-all ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
             isTypeMode
-              ? "bg-[#1cb0f6] text-white shadow-sm border-b-2 border-[#1899d6]"
-              : "btn-duo-white text-zinc-500 dark:text-zinc-400"
+              ? "bg-primary/10 border-primary/30 text-primary"
+              : "btn-saas-secondary text-muted-foreground"
           }`}
-          title="Modo de Digita\u00e7\u00e3o"
+          title="Modo de Digitação"
         >
-          <Keyboard size={14} strokeWidth={2.5} />
-          <span>Modo Digitação {isTypeMode ? "Ativo" : "Off"}</span>
+          <Keyboard size={13} />
+          <span className="hidden sm:inline">Digitar</span>
         </button>
       </div>
 
-      {/* ═══════════ FLASHCARD EXERCISE TILE WITH GESTURE SWIPE ═══════════ */}
-      <div className="w-full relative mb-6 touch-manipulation perspective-1000">
+      {/* Hairline Progress Bar */}
+      <div className="w-full h-1 bg-border rounded-full overflow-hidden mb-5">
+        <div
+          className="h-full bg-emerald-500 transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      {/* ═══════════ FLASHCARD SURFACE ═══════════ */}
+      <div className="w-full relative mb-5 touch-manipulation perspective-1000">
         <motion.div
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
@@ -393,193 +390,154 @@ export default function FlashcardDeck({
           }}
           className="w-full cursor-grab active:cursor-grabbing select-none relative"
         >
-          {/* Swipe Stamp Badges (Duolingo / Tinder style) */}
-          <AnimatePresence>
-            {dragOffset > 40 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: Math.min(1, (dragOffset - 30) / 60), scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute top-6 left-6 z-30 border-4 border-[#58cc02] text-[#58cc02] font-black uppercase text-xl sm:text-2xl px-4 py-1.5 rounded-2xl rotate-[-12deg] bg-white/90 dark:bg-[#182228]/90 shadow-xl pointer-events-none"
-              >
-                ACERTEI ✓
-              </motion.div>
-            )}
-
-            {dragOffset < -40 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: Math.min(1, (-dragOffset - 30) / 60), scale: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute top-6 right-6 z-30 border-4 border-[#ff4b4b] text-[#ff4b4b] font-black uppercase text-xl sm:text-2xl px-4 py-1.5 rounded-2xl rotate-[12deg] bg-white/90 dark:bg-[#182228]/90 shadow-xl pointer-events-none"
-              >
-                ERREI ✕
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <AnimatePresence mode="wait">
             <motion.div
               key={`${currentCard.id}-${isFlipped ? "back" : "front"}`}
-              initial={{ rotateY: isFlipped ? -45 : 45, opacity: 0 }}
+              initial={{ rotateY: isFlipped ? -25 : 25, opacity: 0 }}
               animate={{ rotateY: 0, opacity: 1 }}
-              exit={{ rotateY: isFlipped ? 45 : -45, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              exit={{ rotateY: isFlipped ? 25 : -25, opacity: 0 }}
+              transition={{ duration: 0.16 }}
               onClick={!isTypeMode || isFlipped ? handleFlip : undefined}
-              className="card-duo w-full min-h-[340px] sm:min-h-[400px] p-6 sm:p-8 bg-white dark:bg-[#182228] border-2 border-zinc-200 dark:border-[#28353d] flex flex-col items-center justify-between text-center shadow-md transition-colors relative"
+              className="card-saas w-full min-h-[320px] sm:min-h-[380px] p-6 sm:p-8 flex flex-col justify-between text-left shadow-sm relative"
             >
-              {/* Card Image */}
+              {/* Header inside card: Status Pill + TTS */}
+              <div className="flex items-center justify-between w-full pb-3 border-b border-border/60">
+                <span className={`text-[11px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                  !isFlipped
+                    ? "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
+                    : "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                }`}>
+                  {!isFlipped ? "Pergunta" : "Resposta"}
+                </span>
+
+                <button
+                  onClick={(e) => handleSpeak(!isFlipped ? currentCard.front : currentCard.back, e)}
+                  className={`btn-saas-secondary p-1.5 rounded-md text-muted-foreground hover:text-foreground ${
+                    isSpeaking ? "border-primary text-primary" : ""
+                  }`}
+                  title="Ouvir pronúncia (TTS)"
+                >
+                  <Volume2 size={15} />
+                </button>
+              </div>
+
+              {/* Image if available */}
               {currentCard.imageUrl && (
-                <div className="mb-4 max-h-36 sm:max-h-44 rounded-2xl overflow-hidden border-2 border-zinc-200 dark:border-[#28353d]">
+                <div className="my-3 max-h-36 sm:max-h-44 rounded-lg overflow-hidden border border-border self-center">
                   <img
                     src={currentCard.imageUrl}
-                    alt="Anexo"
+                    alt="Anexo do Flashcard"
                     className="h-full w-auto object-cover max-h-36 sm:max-h-44"
                   />
                 </div>
               )}
 
-              {!isFlipped ? (
-                /* ─── FRONT (QUESTION) ─── */
-                <div className="flex flex-col items-center justify-center w-full py-2 flex-1">
-                  <div className="flex items-center justify-between w-full mb-3">
-                    <div className="flex items-center gap-2">
-                      <Mascot size={32} mood="happy" />
-                      <span className="text-[11px] font-black uppercase tracking-wider text-[#1cb0f6] bg-blue-50 dark:bg-blue-500/15 px-3 py-1 rounded-xl border-2 border-blue-200 dark:border-blue-500/30">
-                        Pergunta
-                      </span>
-                    </div>
-
-                    {/* Pronunciation TTS Button */}
-                    <button
-                      onClick={(e) => handleSpeak(currentCard.front, e)}
-                      className={`p-2.5 rounded-2xl btn-duo-white text-zinc-500 hover:text-[#1cb0f6] transition-colors ${
-                        isSpeaking ? "animate-pulse border-[#1cb0f6] text-[#1cb0f6]" : ""
-                      }`}
-                      title="Ouvir pron\u00fancia"
-                    >
-                      <Volume2 size={18} strokeWidth={2.5} />
-                    </button>
-                  </div>
-
-                  <div className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-relaxed break-words max-w-full prose-card my-auto">
+              {/* Card Content Area */}
+              <div className="my-auto py-4">
+                {!isFlipped ? (
+                  /* FRONT CONTENT */
+                  <div className="text-lg sm:text-xl font-semibold text-foreground leading-relaxed break-words prose-card">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.front}</ReactMarkdown>
                   </div>
+                ) : (
+                  /* BACK CONTENT */
+                  <div className="space-y-3">
+                    {/* Type feedback if active */}
+                    {isTypeMode && hasSubmittedTyped && (
+                      <div
+                        className={`p-2.5 rounded-lg border text-xs font-medium ${
+                          isExactTypedMatch
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                            : "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="text-[10px] font-mono uppercase block opacity-75">
+                          {isExactTypedMatch ? "Acerto Exato ✓" : "Sua Digitação:"}
+                        </span>
+                        <span className="font-mono font-semibold">{typedAnswer || "(em branco)"}</span>
+                      </div>
+                    )}
 
-                  {/* Type Mode Input (Optional) */}
-                  {isTypeMode && (
-                    <div
-                      className="w-full mt-4"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <form onSubmit={handleVerifyTyped} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={typedAnswer}
-                          onChange={(e) => setTypedAnswer(e.target.value)}
-                          placeholder="Digite sua resposta aqui..."
-                          className="flex-1 p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-zinc-50 dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-bold focus:border-[#58cc02] outline-none"
-                          autoFocus
-                        />
-                        <button
-                          type="submit"
-                          className="btn-duo-green px-4 py-2 rounded-2xl font-black text-xs uppercase"
-                        >
-                          Checar
-                        </button>
-                      </form>
-                    </div>
-                  )}
-
-                  <p className="text-xs font-black text-zinc-400 dark:text-zinc-500 mt-6 flex items-center gap-1.5 uppercase tracking-wider">
-                    <RotateCcw size={13} strokeWidth={2.5} />
-                    <span>Toque ou deslize para ver a resposta</span>
-                  </p>
-                </div>
-              ) : (
-                /* ─── BACK (ANSWER) ─── */
-                <div className="flex flex-col items-center justify-center w-full py-2 flex-1">
-                  <div className="flex items-center justify-between w-full mb-3">
-                    <div className="flex items-center gap-2">
-                      <Mascot size={32} mood="cheering" />
-                      <span className="text-[11px] font-black uppercase tracking-wider text-[#58cc02] bg-emerald-50 dark:bg-emerald-500/15 px-3 py-1 rounded-xl border-2 border-emerald-200 dark:border-emerald-500/30">
-                        Resposta
-                      </span>
+                    <div className="text-lg sm:text-xl font-semibold text-foreground leading-relaxed break-words prose-card">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.back}</ReactMarkdown>
                     </div>
 
-                    {/* Pronunciation TTS Button for Answer */}
+                    {currentCard.extra && (
+                      <div
+                        className="text-xs text-muted-foreground bg-muted/10 p-3 rounded-lg border border-border/60 prose-card mt-3"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.extra}</ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Type mode form on front */}
+              {!isFlipped && isTypeMode && (
+                <div
+                  className="w-full pt-3 border-t border-border/60"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <form onSubmit={handleVerifyTyped} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={typedAnswer}
+                      onChange={(e) => setTypedAnswer(e.target.value)}
+                      placeholder="Digite sua resposta e pressione Enter..."
+                      className="flex-1 p-2 rounded-lg border border-border bg-surface text-foreground text-xs font-mono focus:border-primary outline-none"
+                      autoFocus
+                    />
                     <button
-                      onClick={(e) => handleSpeak(currentCard.back, e)}
-                      className={`p-2.5 rounded-2xl btn-duo-white text-zinc-500 hover:text-[#58cc02] transition-colors ${
-                        isSpeaking ? "animate-pulse border-[#58cc02] text-[#58cc02]" : ""
-                      }`}
-                      title="Ouvir pron\u00fancia da resposta"
+                      type="submit"
+                      className="btn-saas-primary text-xs py-1.5 px-3"
                     >
-                      <Volume2 size={18} strokeWidth={2.5} />
+                      Checar
                     </button>
-                  </div>
-
-                  {/* Type Comparison Feedback if user typed */}
-                  {isTypeMode && hasSubmittedTyped && (
-                    <div
-                      className={`w-full p-3 mb-3 rounded-2xl border-2 text-xs font-bold text-left ${
-                        isExactTypedMatch
-                          ? "bg-emerald-50 dark:bg-emerald-500/15 border-emerald-300 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
-                          : "bg-amber-50 dark:bg-amber-500/15 border-amber-300 dark:border-amber-500/30 text-amber-700 dark:text-amber-300"
-                      }`}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <span className="block text-[10px] font-black uppercase opacity-75">
-                        {isExactTypedMatch ? "Acertou em cheio! 🎯" : "Sua Digitação:"}
-                      </span>
-                      <span className="text-sm font-black">{typedAnswer || "(vazio)"}</span>
-                    </div>
-                  )}
-
-                  <div className="text-lg sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 leading-relaxed mb-3 break-words max-w-full prose-card my-auto">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.back}</ReactMarkdown>
-                  </div>
-
-                  {currentCard.extra && (
-                    <div
-                      className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-[#131f24] p-3.5 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] max-w-sm w-full prose-card text-left mt-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentCard.extra}</ReactMarkdown>
-                    </div>
-                  )}
+                  </form>
                 </div>
               )}
+
+              {/* Footer instruction */}
+              <div className="pt-3 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <RotateCcw size={12} />
+                  <span>{!isFlipped ? "Clique ou pressione Espaço para virar" : "Avalie sua retenção abaixo"}</span>
+                </span>
+                <span className="font-mono text-[10px] hidden sm:inline">[Espaço]</span>
+              </div>
             </motion.div>
           </AnimatePresence>
         </motion.div>
       </div>
 
-      {/* ═══════════ 3D DUOLINGO GRADING BUTTONS ═══════════ */}
+      {/* ═══════════ PRECISION SRS RATING CONTROLS ═══════════ */}
       <div className="w-full">
         {isFlipped ? (
-          <div className="w-full grid grid-cols-4 gap-2 sm:gap-3">
+          <div className="w-full grid grid-cols-4 gap-2">
             {ANSWER_BUTTONS.map((btn) => (
               <button
                 key={btn.rating}
                 onClick={() => handleAnswer(btn.rating)}
                 disabled={isSyncing}
-                className={`${btn.btnClass} flex flex-col items-center py-3 px-2 rounded-2xl active:scale-95 shadow-sm touch-manipulation min-h-[64px] justify-center disabled:opacity-50`}
+                className={`btn-keycap ${btn.styles} min-h-[58px] disabled:opacity-50`}
               >
-                <span className="text-[10px] font-bold opacity-90">{btn.time}</span>
-                <span className="font-black text-xs sm:text-sm uppercase tracking-wider">{btn.label}</span>
-                <span className="text-[9px] font-mono opacity-80 hidden sm:inline">[{btn.key}]</span>
+                <span className="text-[10px] font-mono opacity-80">{btn.time}</span>
+                <span className="text-xs sm:text-sm font-semibold">{btn.label}</span>
+                <span className="text-[9px] font-mono opacity-70 hidden sm:inline">[{btn.key}]</span>
               </button>
             ))}
           </div>
         ) : (
           <button
             onClick={handleFlip}
-            className="w-full btn-duo-green py-4 rounded-2xl font-black text-sm sm:text-base uppercase tracking-wider shadow-md flex items-center justify-center gap-2"
+            className="w-full btn-saas-primary py-3 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2"
           >
             <span>Mostrar Resposta</span>
-            <kbd className="text-xs bg-black/20 text-white px-2 py-0.5 rounded-lg hidden sm:inline">
-              {"Espa\u00e7o"}
+            <kbd className="font-mono text-[10px] bg-white/20 dark:bg-black/20 px-1.5 py-0.5 rounded">
+              Espaço
             </kbd>
           </button>
         )}

@@ -9,11 +9,11 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="btn-duo-white w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-zinc-600 dark:text-zinc-300"
+      className="btn-saas-secondary w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground"
       aria-label="Alternar tema"
       title={theme === "dark" ? "Ativar Modo Claro" : "Ativar Modo Escuro"}
     >
-      {theme === "dark" ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+      {theme === "dark" ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} />}
     </button>
   );
 }

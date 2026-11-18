@@ -7,7 +7,6 @@ import { getRetentionAnalytics } from "@/app/actions/flashcards";
 import { BarChart3, X, Target, TrendingUp, CheckCircle2, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "./ThemeProvider";
-import Mascot from "./Mascot";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -30,13 +29,13 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
   const easy = data?.ratingsCount[4] || 0;
 
   const doughnutData = {
-    labels: ["Erros (Novamente)", "Dif\u00edcil", "Bom", "F\u00e1cil"],
+    labels: ["Erros", "Difícil", "Bom", "Fácil"],
     datasets: [
       {
         data: [again, hard, good, easy],
-        backgroundColor: ["#ff4b4b", "#ff9600", "#58cc02", "#1cb0f6"],
-        borderColor: theme === "dark" ? "#182228" : "#ffffff",
-        borderWidth: 3,
+        backgroundColor: ["#f43f5e", "#f59e0b", "#10b981", "#3b82f6"],
+        borderColor: theme === "dark" ? "#12141a" : "#ffffff",
+        borderWidth: 2,
         borderRadius: 4,
       },
     ],
@@ -49,71 +48,64 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity"
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.98, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="card-duo bg-white dark:bg-[#182228] p-6 sm:p-7 w-full max-w-md shadow-2xl space-y-5 max-h-[88vh] overflow-y-auto transition-colors"
+            exit={{ scale: 0.98, opacity: 0 }}
+            className="card-saas p-6 w-full max-w-md shadow-xl space-y-4 max-h-[88vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Mascot size={34} mood="cheering" />
-                <h2 className="text-lg font-black text-zinc-900 dark:text-white">
-                  {"Minhas Conquistas"}
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <BarChart3 size={18} className="text-primary" />
+                <h2 className="text-base font-bold text-foreground">
+                  Métricas de Retenção & SRS
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="p-1 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="card-duo bg-zinc-50 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] p-3.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Target size={14} className="text-blue-500" />
-                  <span className="text-[11px] text-zinc-600 dark:text-zinc-300 font-black uppercase tracking-wider">
-                    {"Revis\u00f5es"}
-                  </span>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-3 rounded-lg border border-border bg-muted/10">
+                <div className="flex items-center gap-1.5 mb-1 text-muted-foreground text-xs">
+                  <Target size={13} className="text-blue-500" />
+                  <span>Total de Revisões</span>
                 </div>
-                <div className="text-2xl font-black text-zinc-900 dark:text-white tabular-nums">{total}</div>
+                <div className="text-xl font-bold font-mono text-foreground">{total}</div>
               </div>
 
-              <div className="card-duo bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 p-3.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp size={14} className="text-[#58cc02]" />
-                  <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-black uppercase tracking-wider">
-                    {"Reten\u00e7\u00e3o"}
-                  </span>
+              <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10">
+                <div className="flex items-center gap-1.5 mb-1 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+                  <TrendingUp size={13} />
+                  <span>Taxa de Retenção</span>
                 </div>
-                <div className="text-2xl font-black text-[#58cc02] tabular-nums">{retentionRate}%</div>
+                <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">{retentionRate}%</div>
               </div>
 
-              <div className="card-duo bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 p-3.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <CheckCircle2 size={14} className="text-[#1cb0f6]" />
-                  <span className="text-[11px] text-blue-700 dark:text-blue-400 font-black uppercase tracking-wider">
-                    Acertos
-                  </span>
+              <div className="p-3 rounded-lg border border-border bg-muted/10">
+                <div className="flex items-center gap-1.5 mb-1 text-muted-foreground text-xs">
+                  <CheckCircle2 size={13} className="text-emerald-500" />
+                  <span>Respostas Corretas</span>
                 </div>
-                <div className="text-2xl font-black text-[#1cb0f6] tabular-nums">{good + easy}</div>
+                <div className="text-xl font-bold font-mono text-foreground">{good + easy}</div>
               </div>
 
-              <div className="card-duo bg-rose-50 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/30 p-3.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <XCircle size={14} className="text-[#ff4b4b]" />
-                  <span className="text-[11px] text-rose-700 dark:text-rose-400 font-black uppercase tracking-wider">
-                    Erros
-                  </span>
+              <div className="p-3 rounded-lg border border-rose-500/20 bg-rose-500/10">
+                <div className="flex items-center gap-1.5 mb-1 text-rose-600 dark:text-rose-400 text-xs font-medium">
+                  <XCircle size={13} />
+                  <span>Taxa de Esquecimento</span>
                 </div>
-                <div className="text-2xl font-black text-[#ff4b4b] tabular-nums">{errorRate}%</div>
+                <div className="text-xl font-bold font-mono text-rose-600 dark:text-rose-400">{errorRate}%</div>
               </div>
             </div>
 
@@ -123,16 +115,16 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
                 <Doughnut
                   data={doughnutData}
                   options={{
-                    cutout: "68%",
+                    cutout: "70%",
                     plugins: {
                       legend: {
                         position: "bottom",
                         labels: {
-                          color: theme === "dark" ? "#d4d4d8" : "#3f3f46",
-                          font: { size: 11, family: "Plus Jakarta Sans", weight: "bold" },
-                          padding: 12,
+                          color: theme === "dark" ? "#94a3b8" : "#64748b",
+                          font: { size: 11, family: "Plus Jakarta Sans" },
+                          padding: 10,
                           usePointStyle: true,
-                          pointStyleWidth: 10,
+                          pointStyleWidth: 8,
                         },
                       },
                     },
@@ -141,15 +133,15 @@ export default function AnalyticsModal({ isOpen, onClose }: { isOpen: boolean; o
               </div>
             ) : (
               <div className="text-center py-6">
-                <p className="text-xs font-bold text-zinc-500">
-                  {"Pratique algumas li\u00e7\u00f5es para ver suas estat\u00edsticas de mem\u00f3ria!"}
+                <p className="text-xs text-muted-foreground">
+                  Pratique algumas lições para calcular sua curva de retenção de memória.
                 </p>
               </div>
             )}
 
             <button
               onClick={onClose}
-              className="w-full btn-duo-green py-3 rounded-2xl font-black text-xs uppercase tracking-wider"
+              className="w-full btn-saas-secondary py-2 text-xs font-semibold"
             >
               Fechar
             </button>

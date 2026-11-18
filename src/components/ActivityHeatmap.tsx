@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Calendar, Flame, Trophy, Award } from "lucide-react";
+import { Flame, Trophy } from "lucide-react";
 
 interface ActivityHeatmapProps {
   activityData: Record<string, { count: number; goodCount: number }>;
@@ -16,8 +16,6 @@ export default function ActivityHeatmap({ activityData }: ActivityHeatmapProps) 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Ajusta para terminar no dia atual ou fim da semana
-    const dayOfWeek = today.getDay(); // 0 = Domingo
     const totalDays = 21 * 7;
 
     for (let i = totalDays - 1; i >= 0; i--) {
@@ -46,13 +44,13 @@ export default function ActivityHeatmap({ activityData }: ActivityHeatmapProps) 
     return { totalReviews, activeDays, maxDayReviews };
   }, [activityData]);
 
-  // Função para definir a cor do tile
+  // Função para definir a cor do tile estilo GitHub / Linear
   const getTileColor = (count: number) => {
-    if (count === 0) return "bg-zinc-100 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d]";
-    if (count <= 4) return "bg-[#58cc02]/35 border-[#58cc02]/50 text-white";
-    if (count <= 12) return "bg-[#58cc02]/70 border-[#58cc02]/85 text-white";
-    if (count <= 24) return "bg-[#58cc02] border-[#46a302] text-white";
-    return "bg-[#46a302] border-[#388502] text-white shadow-sm";
+    if (count === 0) return "bg-muted/20 border-border/60 hover:border-muted-foreground/40";
+    if (count <= 4) return "bg-emerald-500/25 border-emerald-500/40 text-white";
+    if (count <= 12) return "bg-emerald-500/50 border-emerald-500/60 text-white";
+    if (count <= 24) return "bg-emerald-500/80 border-emerald-500/90 text-white";
+    return "bg-emerald-500 border-emerald-400 text-white shadow-xs";
   };
 
   // Formata data brasileira
@@ -62,32 +60,22 @@ export default function ActivityHeatmap({ activityData }: ActivityHeatmapProps) 
   };
 
   return (
-    <div className="card-duo bg-white dark:bg-[#182228] p-5 sm:p-6 shadow-sm space-y-4">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-500/15 border-2 border-emerald-300 dark:border-emerald-500/30 flex items-center justify-center text-[#58cc02]">
-            <Calendar size={20} />
-          </div>
-          <div>
-            <h3 className="text-sm sm:text-base font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              {"Mapa de Calor de Consist\u00e2ncia"}
-            </h3>
-            <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-              Histórico de revisões ativas nos últimos 5 meses
-            </p>
-          </div>
+    <div className="space-y-3.5 pt-1">
+      {/* Top Header stats */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="text-muted-foreground font-mono">
+          <span>{stats.totalReviews} revisões registradas no período</span>
         </div>
 
         {/* Stats Badges */}
-        <div className="flex items-center gap-2 text-xs font-black">
-          <div className="px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-[#131f24] border border-zinc-200 dark:border-[#28353d] text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-            <Flame size={14} className="text-amber-500" />
+        <div className="flex items-center gap-2 font-mono">
+          <div className="px-2.5 py-1 rounded-md bg-muted/15 border border-border text-foreground flex items-center gap-1.5">
+            <Flame size={12} className="text-amber-500" />
             <span>{stats.activeDays} dias ativos</span>
           </div>
-          <div className="px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-[#131f24] border border-zinc-200 dark:border-[#28353d] text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-            <Trophy size={14} className="text-[#58cc02]" />
-            <span>{stats.maxDayReviews} recorde</span>
+          <div className="px-2.5 py-1 rounded-md bg-muted/15 border border-border text-foreground flex items-center gap-1.5">
+            <Trophy size={12} className="text-emerald-500" />
+            <span>Recorde: {stats.maxDayReviews}/dia</span>
           </div>
         </div>
       </div>
@@ -96,13 +84,13 @@ export default function ActivityHeatmap({ activityData }: ActivityHeatmapProps) 
       <div className="overflow-x-auto pb-1">
         <div className="min-w-[620px]">
           {/* Grid de 21 colunas x 7 linhas */}
-          <div className="grid grid-flow-col grid-rows-7 gap-1.5">
+          <div className="grid grid-flow-col grid-rows-7 gap-1 sm:gap-1.5">
             {days.map((d) => (
               <div
                 key={d.dateStr}
                 onMouseEnter={() => setHoveredDay({ date: d.dateStr, count: d.count })}
                 onMouseLeave={() => setHoveredDay(null)}
-                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-[5px] border cursor-pointer transition-all hover:scale-125 ${getTileColor(
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-[3.5px] border cursor-pointer transition-all hover:scale-125 ${getTileColor(
                   d.count
                 )}`}
               />
@@ -112,11 +100,11 @@ export default function ActivityHeatmap({ activityData }: ActivityHeatmapProps) 
       </div>
 
       {/* Legend & Hover Info */}
-      <div className="flex items-center justify-between text-[11px] font-bold text-zinc-500 dark:text-zinc-400 pt-1">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
         <div>
           {hoveredDay ? (
-            <span className="text-[#58cc02] font-black">
-              {hoveredDay.count} {hoveredDay.count === 1 ? "revis\u00e3o" : "revis\u00f5es"} em {formatDateBR(hoveredDay.date)}
+            <span className="text-foreground font-semibold font-mono">
+              {hoveredDay.count} {hoveredDay.count === 1 ? "revisão" : "revisões"} em {formatDateBR(hoveredDay.date)}
             </span>
           ) : (
             <span>Passe o mouse sobre os blocos para inspecionar</span>
@@ -126,11 +114,11 @@ export default function ActivityHeatmap({ activityData }: ActivityHeatmapProps) 
         {/* Legend escala */}
         <div className="flex items-center gap-1.5">
           <span>Menos</span>
-          <div className="w-3 h-3 rounded-[4px] bg-zinc-100 dark:bg-[#131f24] border border-zinc-200 dark:border-[#28353d]" />
-          <div className="w-3 h-3 rounded-[4px] bg-[#58cc02]/35 border border-[#58cc02]/50" />
-          <div className="w-3 h-3 rounded-[4px] bg-[#58cc02]/70 border border-[#58cc02]/85" />
-          <div className="w-3 h-3 rounded-[4px] bg-[#58cc02] border border-[#46a302]" />
-          <div className="w-3 h-3 rounded-[4px] bg-[#46a302] border border-[#388502]" />
+          <div className="w-2.5 h-2.5 rounded-[2.5px] bg-muted/20 border border-border/60" />
+          <div className="w-2.5 h-2.5 rounded-[2.5px] bg-emerald-500/25 border border-emerald-500/40" />
+          <div className="w-2.5 h-2.5 rounded-[2.5px] bg-emerald-500/50 border border-emerald-500/60" />
+          <div className="w-2.5 h-2.5 rounded-[2.5px] bg-emerald-500/80 border border-emerald-500/90" />
+          <div className="w-2.5 h-2.5 rounded-[2.5px] bg-emerald-500 border border-emerald-400" />
           <span>Mais</span>
         </div>
       </div>

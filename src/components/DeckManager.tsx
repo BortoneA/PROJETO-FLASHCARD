@@ -4,7 +4,6 @@ import { useState, useRef, useMemo, useEffect } from "react";
 import { createDeck, createCard, deleteDeck } from "@/app/actions/flashcards";
 import RichToolbar from "./RichToolbar";
 import DeckEditModal from "./DeckEditModal";
-import Mascot from "./Mascot";
 import ActivityHeatmap from "./ActivityHeatmap";
 import SpeedRunModal from "./SpeedRunModal";
 import XpShopModal from "./XpShopModal";
@@ -12,10 +11,11 @@ import { sound } from "@/lib/sound";
 import { triggerConfetti } from "@/lib/confetti";
 import {
   Plus, ArrowRight, Download, Trash2, Play,
-  BookOpen, Flame, Gem, Crown, BarChart3,
+  BookOpen, Flame, Crown, BarChart3,
   Image as ImageIcon, Upload, Loader2, Pencil,
-  Search, X, CheckCircle2, Sparkles, Zap, ShoppingBag,
-  MoreVertical, ChevronDown, ChevronUp
+  Search, X, CheckCircle2, Sparkles, Zap, Award,
+  MoreVertical, ChevronDown, ChevronUp, LayoutGrid, List,
+  Calendar, Layers, Clock, TrendingUp
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,7 +49,10 @@ export default function DeckManager({
   const [importingDeckId, setImportingDeckId] = useState<string | null>(null);
   const [editingDeck, setEditingDeck] = useState<any | null>(null);
   const [activeMenuDeckId, setActiveMenuDeckId] = useState<string | null>(null);
-  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(true);
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [sortBy, setSortBy] = useState<"recent" | "cards" | "due" | "alpha">("recent");
+
   const [importResult, setImportResult] = useState<{
     decks: { title: string; importedCards: number; skippedDuplicates: number }[];
     totalImported: number;
@@ -57,14 +60,7 @@ export default function DeckManager({
   } | null>(null);
 
   // Gamification & Skin state
-  const [hasGoldenCrown, setHasGoldenCrown] = useState(false);
   const [currentXp, setCurrentXp] = useState(userProfile?.xp || 0);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setHasGoldenCrown(localStorage.getItem("duo_golden_crown") === "true");
-    }
-  }, []);
 
   useEffect(() => {
     if (userProfile?.xp !== undefined) {
@@ -100,7 +96,7 @@ export default function DeckManager({
   // Create Deck form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [icon, setIcon] = useState("\uD83D\uDCDA");
+  const [icon, setIcon] = useState("📚");
   const [coverUrl, setCoverUrl] = useState("");
 
   // Create Card form state
@@ -118,7 +114,6 @@ export default function DeckManager({
 
   const level = userProfile?.level || 1;
   const rankTitle = userProfile?.title || "Iniciante Curioso";
-  const rankBadge = userProfile?.badge || "\uD83D\uDD25";
   const xp = userProfile?.xp || 0;
   const nextLevelXp = userProfile?.nextLevelXp || 100;
   const currentLevelMinXp = userProfile?.currentLevelMinXp || 0;
@@ -131,9 +126,9 @@ export default function DeckManager({
     Math.max(0, Math.round((xpInCurrentLevel / (xpNeededForLevel || 1)) * 100))
   );
 
-  // Filtered decks
+  // Filtered & Sorted decks
   const filteredDecks = useMemo(() => {
-    return decks.filter((deck) => {
+    const list = decks.filter((deck) => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !q ||
@@ -146,9 +141,17 @@ export default function DeckManager({
       if (filterTab === "new") return deck.newCardsCount > 0;
       return true;
     });
-  }, [decks, searchQuery, filterTab]);
+
+    return list.sort((a, b) => {
+      if (sortBy === "cards") return b.totalCards - a.totalCards;
+      if (sortBy === "due") return b.dueCardsCount - a.dueCardsCount;
+      if (sortBy === "alpha") return a.title.localeCompare(b.title);
+      return new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime();
+    });
+  }, [decks, searchQuery, filterTab, sortBy]);
 
   const decksWithDue = decks.filter((d) => d.dueCardsCount > 0);
+  const decksWithNew = decks.filter((d) => d.newCardsCount > 0);
 
   const handleCreateDeck = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,300 +229,480 @@ export default function DeckManager({
     }
   };
 
+  // Daily goal calculation
+  const dailyGoalTarget = 15;
+  const currentTodayReviews = todayReviews || 0;
+  const dailyGoalPercent = Math.min(100, Math.round((currentTodayReviews / dailyGoalTarget) * 100));
+
   return (
-    <div className="space-y-6 sm:space-y-8 pb-16">
-      {/* ═══════════ DUOLINGO MASCOT COMMAND BANNER ═══════════ */}
-      <section className="card-duo bg-white dark:bg-[#18191c] p-4 sm:p-6 shadow-sm transition-colors">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-          {/* Mascot with Dynamic Mood & Golden Crown */}
-          <div className="shrink-0 flex flex-col items-center">
-            <Mascot
-              size={85}
-              mood={totalDueAll === 0 ? "cheering" : streak >= 3 ? "fire" : "happy"}
-              hasGoldenCrown={hasGoldenCrown}
-              className="hover:scale-105 transition-transform"
-            />
+    <div className="space-y-6 sm:space-y-7 pb-16">
+      {/* ═══════════ EXECUTIVE COMMAND & OVERVIEW ═══════════ */}
+      <section className="card-saas p-5 sm:p-6 transition-colors">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          {/* Left Column: Context & Headline */}
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium tracking-wide bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Sistema de Repetição Espaçada
+              </span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">•</span>
+              <span className="text-xs text-muted-foreground font-mono hidden sm:inline">
+                {decks.length} baralhos ativos
+              </span>
+            </div>
+
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              {totalDueAll > 0 ? (
+                <>
+                  Você tem <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">{totalDueAll} cartões</span> para revisar hoje.
+                </>
+              ) : (
+                <>Revisões em dia. Nenhum cartão pendente agora.</>
+              )}
+            </h1>
+
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              {totalDueAll > 0
+                ? `Tempo estimado para zerar sua fila: ~${Math.max(2, Math.ceil(totalDueAll * 0.4))} minutos de estudo ativo.`
+                : "Excelente retenção de memória! Adicione novos cartões ou pratique livremente para antecipar revisões."}
+            </p>
           </div>
 
-          {/* Duolingo Speech Bubble */}
-          <div className="flex-1 w-full relative">
-            <div className="bg-[#f0f9eb] dark:bg-[#182228] border-2 border-[#bcf096] dark:border-[#28353d] rounded-3xl p-4 sm:p-5 relative shadow-sm">
-              {/* Speech bubble pointer triangle */}
-              <div className="hidden sm:block absolute -left-3 top-6 w-0 h-0 border-t-[8px] border-t-transparent border-r-[12px] border-r-[#bcf096] dark:border-r-[#28353d] border-b-[8px] border-b-transparent" />
-              <div className="hidden sm:block absolute -left-2 top-6 w-0 h-0 border-t-[8px] border-t-transparent border-r-[11px] border-r-[#f0f9eb] dark:border-r-[#182228] border-b-[8px] border-b-transparent" />
-
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-[#46a302] dark:text-[#58cc02] flex items-center gap-1.5">
-                      <Sparkles size={14} />
-                      {totalDueAll > 0 ? "Missão do Dia" : "Missão Cumprida!"}
-                    </span>
-                  </div>
-
-                  <h1 className="text-lg sm:text-2xl font-black text-zinc-900 dark:text-white tracking-tight">
-                    {totalDueAll > 0 ? (
-                      <span>
-                        {"Você tem "}
-                        <span className="text-[#58cc02]">{totalDueAll} cards</span>
-                        {" para praticar hoje!"}
-                      </span>
-                    ) : (
-                      <span>{"Tudo em dia! Você é imparável! 🎉"}</span>
-                    )}
-                  </h1>
-
-                  <p className="text-xs sm:text-sm font-semibold text-zinc-600 dark:text-zinc-400 mt-0.5">
-                    {totalDueAll > 0
-                      ? "Apenas 5 minutinhos para turbinar sua memória e manter seu streak aceso!"
-                      : "Excelente trabalho! Revise baralhos livres ou crie novos cards para sua meta."}
-                  </p>
-                </div>
-
-                {/* Duolingo Daily Goal Mini-Pill */}
-                {(() => {
-                  const dailyGoalTarget = 15;
-                  const currentTodayReviews = todayReviews || 0;
-                  const dailyGoalPercent = Math.min(
-                    100,
-                    Math.round((currentTodayReviews / dailyGoalTarget) * 100)
-                  );
-                  return (
-                    <div className="flex items-center gap-3 bg-white dark:bg-[#131f24] px-3.5 py-2.5 rounded-2xl border-2 border-[#bcf096] dark:border-[#28353d] shrink-0 self-start md:self-auto shadow-sm">
-                      <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                          <circle
-                            cx="18"
-                            cy="18"
-                            r="14"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3.5"
-                            className="text-zinc-200 dark:text-[#28353d]"
-                          />
-                          <circle
-                            cx="18"
-                            cy="18"
-                            r="14"
-                            fill="none"
-                            stroke={currentTodayReviews >= dailyGoalTarget ? "#58cc02" : "#1cb0f6"}
-                            strokeWidth="3.5"
-                            strokeDasharray={2 * Math.PI * 14}
-                            strokeDashoffset={2 * Math.PI * 14 * (1 - dailyGoalPercent / 100)}
-                            strokeLinecap="round"
-                            className="transition-all duration-500"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-zinc-800 dark:text-zinc-100">
-                          {currentTodayReviews >= dailyGoalTarget ? (
-                            <CheckCircle2 size={16} className="text-[#58cc02]" strokeWidth={3} />
-                          ) : (
-                            `${dailyGoalPercent}%`
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
-                          Meta Diária
-                        </span>
-                        <span className="text-xs font-black text-zinc-900 dark:text-white">
-                          {currentTodayReviews}/{dailyGoalTarget} cards
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })()}
+          {/* Right Column: Daily Goal Precision Meter */}
+          <div className="flex items-center gap-4 bg-muted/15 dark:bg-muted/10 p-3.5 sm:p-4 rounded-xl border border-border shrink-0 self-start lg:self-auto min-w-[240px]">
+            <div className="relative w-11 h-11 flex items-center justify-center shrink-0">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 40 40">
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="text-border"
+                />
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  fill="none"
+                  stroke={currentTodayReviews >= dailyGoalTarget ? "#10b981" : "#3b82f6"}
+                  strokeWidth="3.2"
+                  strokeDasharray={2 * Math.PI * 16}
+                  strokeDashoffset={2 * Math.PI * 16 * (1 - dailyGoalPercent / 100)}
+                  strokeLinecap="round"
+                  className="transition-all duration-500"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center font-mono text-[11px] font-bold text-foreground">
+                {currentTodayReviews >= dailyGoalTarget ? (
+                  <CheckCircle2 size={18} className="text-emerald-500" />
+                ) : (
+                  `${dailyGoalPercent}%`
+                )}
               </div>
+            </div>
 
-              {/* Action Buttons Toolbar with Duolingo 3D Tactile Buttons */}
-              <div className="flex flex-wrap items-center gap-2 pt-3 sm:pt-4 border-t border-[#d8f5be] dark:border-[#28353d]/80 mt-3 sm:mt-4">
-                <Link
-                  href="/study/all"
-                  className={`btn-duo-green px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-sm ${
-                    totalDueAll === 0 ? "opacity-90" : ""
-                  }`}
-                >
-                  <Play size={15} className="fill-current" />
-                  <span>{totalDueAll > 0 ? `Praticar Tudo (${totalDueAll})` : "Praticar Livremente"}</span>
-                </Link>
-
-                <button
-                  onClick={() => setIsModalOpen(true)}
-                  className="btn-duo-white px-3.5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5"
-                >
-                  <Plus size={15} strokeWidth={3} />
-                  <span>Novo Baralho</span>
-                </button>
-
-                <label className="btn-duo-white px-3.5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer">
-                  {isImporting && !importingDeckId ? (
-                    <Loader2 size={15} className="animate-spin text-[#58cc02]" />
-                  ) : (
-                    <Upload size={15} strokeWidth={2.5} />
-                  )}
-                  <span>{isImporting && !importingDeckId ? "Importando..." : "Importar .APKG"}</span>
-                  <input
-                    type="file"
-                    accept=".apkg,application/zip,application/x-zip-compressed,application/octet-stream"
-                    className="hidden"
-                    onChange={(e) => handleImportApkg(e)}
-                    disabled={isImporting}
-                  />
-                </label>
-
-                <button
-                  onClick={() => setIsSpeedRunOpen(true)}
-                  className="btn-duo-orange px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5"
-                  title="Desafio Relâmpago 60 segundos"
-                >
-                  <Zap size={15} className="fill-current" />
-                  <span className="hidden xs:inline">Desafio 60s</span>
-                </button>
-
-                <button
-                  onClick={() => setIsShopOpen(true)}
-                  className="btn-duo-purple px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5"
-                  title="Loja de Recompensas de XP"
-                >
-                  <ShoppingBag size={15} strokeWidth={2.5} />
-                  <span className="hidden xs:inline">Loja XP</span>
-                </button>
-
-                <button
-                  onClick={() => setIsAnalyticsOpen(true)}
-                  className="btn-duo-blue px-3 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5"
-                  title="Conquistas e Estatísticas"
-                >
-                  <BarChart3 size={15} strokeWidth={2.5} />
-                  <span className="hidden sm:inline">Conquistas</span>
-                </button>
+            <div className="space-y-0.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Meta Diária
+                </span>
+                <span className="font-mono text-xs font-semibold text-foreground">
+                  {currentTodayReviews}/{dailyGoalTarget}
+                </span>
               </div>
+              <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                {currentTodayReviews >= dailyGoalTarget
+                  ? "Meta diária alcançada ✓"
+                  : `Faltam ${Math.max(0, dailyGoalTarget - currentTodayReviews)} cards hoje`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Toolbar */}
+        <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-border mt-4">
+          <Link
+            href="/study/all"
+            className="btn-saas-primary flex items-center gap-2"
+          >
+            <Play size={14} className="fill-current" />
+            <span>{totalDueAll > 0 ? `Estudar Fila Completa (${totalDueAll})` : "Estudo Livre"}</span>
+          </Link>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="btn-saas-secondary flex items-center gap-1.5"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            <span>Novo Baralho</span>
+          </button>
+
+          <label className="btn-saas-secondary flex items-center gap-1.5 cursor-pointer">
+            {isImporting && !importingDeckId ? (
+              <Loader2 size={14} className="animate-spin text-emerald-500" />
+            ) : (
+              <Upload size={14} />
+            )}
+            <span>{isImporting && !importingDeckId ? "Importando..." : "Importar .APKG"}</span>
+            <input
+              type="file"
+              accept=".apkg,application/zip,application/x-zip-compressed,application/octet-stream"
+              className="hidden"
+              onChange={(e) => handleImportApkg(e)}
+              disabled={isImporting}
+            />
+          </label>
+
+          <button
+            onClick={() => setIsSpeedRunOpen(true)}
+            className="btn-saas-secondary flex items-center gap-1.5"
+            title="Desafio Relâmpago 60s"
+          >
+            <Zap size={14} className="text-amber-500" />
+            <span>Desafio 60s</span>
+          </button>
+
+          <button
+            onClick={() => setIsShopOpen(true)}
+            className="btn-saas-secondary flex items-center gap-1.5"
+            title="Loja de Recompensas de Maestria"
+          >
+            <Award size={14} className="text-purple-500" />
+            <span>Recompensas XP</span>
+          </button>
+
+          <button
+            onClick={() => setIsAnalyticsOpen(true)}
+            className="btn-saas-secondary flex items-center gap-1.5"
+            title="Métricas de Retenção"
+          >
+            <BarChart3 size={14} className="text-blue-500" />
+            <span>Métricas</span>
+          </button>
+        </div>
+      </section>
+
+      {/* ═══════════ EXECUTIVE MANAGEMENT KPI METRICS ═══════════ */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Metric 1: Due Cards */}
+        <div className="card-saas p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
+            <span>Para Revisão Hoje</span>
+            <Clock size={15} className="text-blue-500" />
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="font-mono text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              {totalDueAll}
+            </span>
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {totalDueAll > 0 ? "prioridade alta" : "tudo em dia"}
+            </span>
+          </div>
+        </div>
+
+        {/* Metric 2: Streak */}
+        <div className="card-saas p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
+            <span>Sequência de Consistência</span>
+            <Flame size={15} className="text-amber-500" />
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="font-mono text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              {streak}
+            </span>
+            <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+              {streak === 1 ? "dia consecutivo" : "dias consecutivos"}
+            </span>
+          </div>
+        </div>
+
+        {/* Metric 3: Total Cards */}
+        <div className="card-saas p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
+            <span>Acervo Total</span>
+            <Layers size={15} className="text-emerald-500" />
+          </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="font-mono text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              {totalCardsAll}
+            </span>
+            <span className="text-[11px] font-medium text-muted-foreground">
+              em {decks.length} baralhos
+            </span>
+          </div>
+        </div>
+
+        {/* Metric 4: Mastery Level */}
+        <div className="card-saas p-4 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-muted-foreground text-xs font-medium">
+            <span>Nível de Maestria</span>
+            <Crown size={15} className="text-purple-500" />
+          </div>
+          <div className="mt-2">
+            <div className="flex items-baseline justify-between">
+              <span className="font-mono text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                Nível {level}
+              </span>
+              <span className="text-[11px] font-mono text-muted-foreground">
+                {xp} XP
+              </span>
+            </div>
+            <div className="w-full bg-border h-1.5 rounded-full mt-2 overflow-hidden">
+              <div
+                className="bg-purple-500 h-full transition-all duration-500"
+                style={{ width: `${levelProgress}%` }}
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════ SEARCH & FILTER TOOLBAR ═══════════ */}
+      {/* ═══════════ SEARCH, FILTER & VIEW CONTROLS ═══════════ */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Chunky Search Input */}
+        {/* Search Input */}
         <div className="relative flex-1 max-w-md">
-          <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar baralho por título..."
-            className="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-[#182228] rounded-xl border-2 border-zinc-200 dark:border-[#28353d] text-sm font-bold text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-[#58cc02] transition-colors"
+            placeholder="Buscar baralho por título ou descrição..."
+            className="w-full pl-9 pr-9 py-2 bg-surface rounded-lg border border-border text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/80 focus:ring-1 focus:ring-primary/20 transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground"
             >
               <X size={14} />
             </button>
           )}
         </div>
 
-        {/* 3D Filter Tabs */}
-        <div className="flex items-center gap-1.5 self-start sm:self-auto">
-          <button
-            onClick={() => setFilterTab("all")}
-            className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
-              filterTab === "all"
-                ? "bg-[#58cc02] text-white border-b-4 border-[#46a302]"
-                : "btn-duo-white"
-            }`}
+        {/* Right Tools: Filter Segment + Sort + View Switcher */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Filter Tabs */}
+          <div className="flex items-center bg-muted/15 dark:bg-muted/10 p-0.5 rounded-lg border border-border text-xs font-medium">
+            <button
+              onClick={() => setFilterTab("all")}
+              className={`px-3 py-1.5 rounded-md transition-all ${
+                filterTab === "all"
+                  ? "bg-surface text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Todos ({decks.length})
+            </button>
+            <button
+              onClick={() => setFilterTab("due")}
+              className={`px-3 py-1.5 rounded-md transition-all ${
+                filterTab === "due"
+                  ? "bg-surface text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Pendentes ({decksWithDue.length})
+            </button>
+            <button
+              onClick={() => setFilterTab("new")}
+              className={`px-3 py-1.5 rounded-md transition-all ${
+                filterTab === "new"
+                  ? "bg-surface text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Novos ({decksWithNew.length})
+            </button>
+          </div>
+
+          {/* Sort Dropdown */}
+          <select
+            value={sortBy}
+            onChange={(e: any) => setSortBy(e.target.value)}
+            className="bg-surface border border-border rounded-lg text-xs font-medium px-2.5 py-1.5 text-muted-foreground focus:outline-none focus:border-primary/80"
           >
-            Todos ({decks.length})
-          </button>
-          <button
-            onClick={() => setFilterTab("due")}
-            className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
-              filterTab === "due"
-                ? "bg-[#1cb0f6] text-white border-b-4 border-[#1899d6]"
-                : "btn-duo-white"
-            }`}
-          >
-            Pendentes ({decksWithDue.length})
-          </button>
-          <button
-            onClick={() => setFilterTab("new")}
-            className={`px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider transition-all ${
-              filterTab === "new"
-                ? "bg-[#ff9600] text-white border-b-4 border-[#e58700]"
-                : "btn-duo-white"
-            }`}
-          >
-            Novos
-          </button>
+            <option value="recent">Mais Recentes</option>
+            <option value="due">Mais Pendentes</option>
+            <option value="cards">Maior Volume</option>
+            <option value="alpha">Ordem Alfabética</option>
+          </select>
+
+          {/* View Mode Switcher: Grid vs Table */}
+          <div className="flex items-center bg-muted/15 dark:bg-muted/10 p-0.5 rounded-lg border border-border">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded-md transition-all ${
+                viewMode === "grid"
+                  ? "bg-surface text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Visualização em Grade de Cards"
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`p-1.5 rounded-md transition-all ${
+                viewMode === "table"
+                  ? "bg-surface text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Visualização em Tabela de Gestão"
+            >
+              <List size={15} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ═══════════ DECKS GRID (CLEAN, DUOLINGO STYLE) ═══════════ */}
+      {/* ═══════════ DECKS PRESENTATION (GRID OU TABELA) ═══════════ */}
       {filteredDecks.length === 0 ? (
-        <div className="card-duo bg-white dark:bg-[#182228] p-10 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-[#202b33] border-2 border-zinc-200 dark:border-[#28353d] flex items-center justify-center mx-auto mb-3 text-3xl">
-            <BookOpen size={30} className="text-zinc-400" strokeWidth={2.5} />
+        <div className="card-saas p-12 text-center">
+          <div className="w-12 h-12 rounded-xl bg-muted/20 border border-border flex items-center justify-center mx-auto mb-3 text-muted-foreground">
+            <BookOpen size={24} strokeWidth={1.75} />
           </div>
-          <h3 className="text-base sm:text-lg font-black text-zinc-800 dark:text-zinc-200">
-            {searchQuery ? "Nenhum baralho encontrado" : "Nenhum baralho criado ainda"}
+          <h3 className="text-base font-semibold text-foreground">
+            {searchQuery ? "Nenhum baralho encontrado" : "Nenhum baralho cadastrado"}
           </h3>
-          <p className="text-xs font-semibold text-zinc-500 max-w-sm mx-auto mt-1">
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
             {searchQuery
               ? `Nenhum resultado corresponde a "${searchQuery}".`
-              : "Crie seu primeiro baralho ou importe um arquivo .APKG do Anki para começar suas lições!"}
+              : "Crie seu primeiro baralho ou importe um arquivo .APKG do Anki para começar seu plano de estudos."}
           </p>
           <button
             onClick={() => (searchQuery ? setSearchQuery("") : setIsModalOpen(true))}
-            className="btn-duo-green px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider mt-4"
+            className="btn-saas-primary mt-4"
           >
             {searchQuery ? "Limpar Busca" : "Criar Primeiro Baralho"}
           </button>
         </div>
+      ) : viewMode === "table" ? (
+        /* ═══════════ DATA TABLE VIEW (ALTA DENSIDADE) ═══════════ */
+        <div className="card-saas overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-muted/10 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <th className="py-3 px-4">Baralho</th>
+                  <th className="py-3 px-4 font-mono">Volume</th>
+                  <th className="py-3 px-4 font-mono">Para Hoje</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60 text-xs">
+                {filteredDecks.map((deck) => (
+                  <tr key={deck.id} className="hover:bg-muted/5 transition-colors group">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg w-7 h-7 rounded-md bg-muted/20 border border-border flex items-center justify-center shrink-0">
+                          {deck.icon}
+                        </span>
+                        <div>
+                          <span className="font-semibold text-foreground block truncate max-w-xs sm:max-w-md">
+                            {deck.title}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground block truncate max-w-xs">
+                            {deck.description || "Sem descrição"}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-mono text-muted-foreground">
+                      {deck.totalCards} cards
+                    </td>
+                    <td className="py-3 px-4 font-mono font-medium">
+                      {deck.dueCardsCount > 0 ? (
+                        <span className="text-rose-600 dark:text-rose-400 font-bold">
+                          {deck.dueCardsCount}
+                        </span>
+                      ) : (
+                        <span className="text-emerald-600 dark:text-emerald-400">0</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      {deck.dueCardsCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                          Revisão Pendente
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          Em dia
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href={`/study/${deck.id}`}
+                          className="btn-saas-secondary py-1 px-2.5 text-xs font-semibold"
+                        >
+                          <span>Estudar</span>
+                          <ArrowRight size={12} className="ml-1" />
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setSelectedDeckId(deck.id);
+                            setIsCardModalOpen(true);
+                          }}
+                          className="btn-saas-secondary py-1 px-2"
+                          title="Adicionar Card"
+                        >
+                          <Plus size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        /* ═══════════ GRID VIEW (CARDS REFINADOS) ═══════════ */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredDecks.map((deck) => (
             <div
               key={deck.id}
-              className="card-duo bg-white dark:bg-[#182228] hover:-translate-y-1 transition-all duration-150 flex flex-col justify-between overflow-hidden shadow-sm"
+              className="card-saas card-saas-hover flex flex-col justify-between overflow-hidden"
             >
               <div>
-                {/* Deck Card Cover or Chunky Header */}
+                {/* Deck Card Cover or Header */}
                 {deck.coverUrl ? (
-                  <div className="h-28 sm:h-32 w-full relative overflow-hidden bg-zinc-100 dark:bg-[#202b33] border-b-2 border-zinc-200 dark:border-[#28353d]">
+                  <div className="h-28 sm:h-32 w-full relative overflow-hidden bg-muted/20 border-b border-border">
                     <img
                       src={deck.coverUrl}
                       alt={deck.title}
                       className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                    {/* Icon Bubble */}
-                    <div className="absolute left-3 bottom-2.5 px-2.5 py-1 bg-white dark:bg-[#182228] rounded-xl text-lg shadow-md border-2 border-zinc-200 dark:border-[#28353d]">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute left-3 bottom-2.5 px-2 py-0.5 bg-surface/90 backdrop-blur-md rounded-md text-base shadow-xs border border-border">
                       {deck.icon}
                     </div>
-                    {/* Status Badge */}
                     {deck.dueCardsCount > 0 ? (
-                      <span className="absolute right-3 top-3 px-2.5 py-1 bg-[#ff4b4b] border-b-2 border-[#ea2b2b] text-white text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm">
+                      <span className="absolute right-3 top-3 px-2 py-0.5 bg-rose-500 text-white text-[10px] font-semibold font-mono uppercase tracking-wider rounded-md shadow-xs">
                         {deck.dueCardsCount} para hoje
                       </span>
                     ) : (
-                      <span className="absolute right-3 top-3 px-2.5 py-1 bg-[#58cc02] border-b-2 border-[#46a302] text-white text-[10px] font-black uppercase tracking-wider rounded-lg shadow-sm">
-                        Em dia!
+                      <span className="absolute right-3 top-3 px-2 py-0.5 bg-emerald-500 text-white text-[10px] font-semibold font-mono uppercase tracking-wider rounded-md shadow-xs">
+                        Em dia
                       </span>
                     )}
                   </div>
                 ) : (
                   <div className="p-4 sm:p-5 pb-0 flex items-start justify-between gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-[#202b33] border-2 border-zinc-200 dark:border-[#28353d] flex items-center justify-center text-2xl shadow-sm shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-muted/20 border border-border flex items-center justify-center text-xl shrink-0">
                       {deck.icon}
                     </div>
                     {deck.dueCardsCount > 0 ? (
-                      <span className="px-2.5 py-1 bg-rose-50 dark:bg-rose-500/15 border-2 border-rose-300 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 text-[11px] font-black uppercase tracking-wider rounded-xl">
+                      <span className="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-[11px] font-mono font-semibold rounded-md">
                         {deck.dueCardsCount} para hoje
                       </span>
                     ) : (
-                      <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-500/15 border-2 border-emerald-300 dark:border-emerald-500/30 text-[#46a302] dark:text-[#58cc02] text-[11px] font-black uppercase tracking-wider rounded-xl">
+                      <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-mono font-semibold rounded-md">
                         Em dia
                       </span>
                     )}
@@ -528,35 +711,33 @@ export default function DeckManager({
 
                 {/* Deck Card Info */}
                 <div className="p-4 sm:p-5">
-                  <h3 className="font-black text-base sm:text-lg text-zinc-900 dark:text-zinc-100 leading-snug line-clamp-1">
+                  <h3 className="font-semibold text-base text-foreground leading-snug line-clamp-1">
                     {deck.title}
                   </h3>
-                  <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 line-clamp-2 mt-1 min-h-[30px] leading-relaxed">
-                    {deck.description || "Pratique os cards deste baralho para dominar o conteúdo!"}
+                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1 min-h-[32px] leading-relaxed">
+                    {deck.description || "Sem descrição cadastrada."}
                   </p>
 
                   {/* Metadata Chips */}
-                  <div className="flex items-center gap-2 mt-3 text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
-                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-[#202b33]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#1cb0f6]" />
+                  <div className="flex items-center gap-2 mt-3 text-[11px] font-mono font-medium text-muted-foreground">
+                    <span className="px-2 py-0.5 rounded-md bg-muted/15 border border-border/60">
                       {deck.totalCards} cards
                     </span>
-                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-[#202b33]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#58cc02]" />
+                    <span className="px-2 py-0.5 rounded-md bg-muted/15 border border-border/60">
                       {deck.newCardsCount} novos
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons Footer: 2 Clean Main Actions + More Menu */}
-              <div className="p-3 sm:p-4 pt-0 border-t-2 border-zinc-100 dark:border-[#28353d]/80 flex items-center gap-2 relative">
+              {/* Action Buttons Footer */}
+              <div className="p-3 sm:p-4 pt-0 border-t border-border flex items-center gap-1.5 relative">
                 <Link
                   href={`/study/${deck.id}`}
-                  className="flex-1 btn-duo-green py-2 px-3 sm:px-4 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
+                  className="flex-1 btn-saas-primary py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5"
                 >
-                  <span>Praticar</span>
-                  <ArrowRight size={14} strokeWidth={3} />
+                  <span>Estudar</span>
+                  <ArrowRight size={13} />
                 </Link>
 
                 <button
@@ -564,26 +745,25 @@ export default function DeckManager({
                     setSelectedDeckId(deck.id);
                     setIsCardModalOpen(true);
                   }}
-                  className="btn-duo-white p-2 sm:px-3 rounded-xl flex items-center justify-center gap-1 shrink-0"
+                  className="btn-saas-secondary p-1.5 rounded-lg"
                   title="Adicionar Card Manualmente"
                 >
-                  <Plus size={15} strokeWidth={3} />
-                  <span className="hidden xs:inline text-xs font-black uppercase">Card</span>
+                  <Plus size={15} />
                 </button>
 
-                {/* 3-dots Menu Popover */}
-                <div className="relative shrink-0" data-deck-menu>
+                {/* Dropdown Menu */}
+                <div className="relative" data-deck-menu>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveMenuDeckId(activeMenuDeckId === deck.id ? null : deck.id);
                     }}
-                    className={`btn-duo-white p-2 rounded-xl flex items-center justify-center transition-colors ${
-                      activeMenuDeckId === deck.id ? "bg-zinc-200 dark:bg-[#28353d]" : ""
+                    className={`btn-saas-secondary p-1.5 rounded-lg transition-colors ${
+                      activeMenuDeckId === deck.id ? "bg-muted/20" : ""
                     }`}
                     title="Mais opções do baralho"
                   >
-                    <MoreVertical size={16} strokeWidth={2.5} />
+                    <MoreVertical size={15} />
                   </button>
 
                   <AnimatePresence>
@@ -593,11 +773,11 @@ export default function DeckManager({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -4 }}
                         transition={{ duration: 0.12 }}
-                        className="absolute right-0 bottom-full mb-2 w-52 bg-white dark:bg-[#182228] border-2 border-zinc-200 dark:border-[#28353d] rounded-2xl shadow-xl z-30 p-1.5 space-y-0.5"
+                        className="absolute right-0 bottom-full mb-2 w-52 bg-surface border border-border rounded-xl shadow-lg z-30 p-1 space-y-0.5"
                       >
                         {/* Somar cards com .APKG */}
-                        <label className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-[#202b33] rounded-xl cursor-pointer transition-colors">
-                          <Upload size={14} className="text-[#58cc02]" strokeWidth={2.5} />
+                        <label className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/20 rounded-lg cursor-pointer transition-colors">
+                          <Upload size={14} className="text-emerald-500" />
                           <span className="flex-1">Somar cards (.APKG)</span>
                           <input
                             type="file"
@@ -617,9 +797,9 @@ export default function DeckManager({
                             setActiveMenuDeckId(null);
                             setEditingDeck(deck);
                           }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-[#202b33] rounded-xl transition-colors text-left"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/20 rounded-lg transition-colors text-left"
                         >
-                          <Pencil size={14} className="text-blue-500" strokeWidth={2.5} />
+                          <Pencil size={14} className="text-blue-500" />
                           <span>Editar baralho</span>
                         </button>
 
@@ -628,13 +808,13 @@ export default function DeckManager({
                           href={`/api/export-apkg?deckId=${deck.id}`}
                           download
                           onClick={() => setActiveMenuDeckId(null)}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-[#202b33] rounded-xl transition-colors"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/20 rounded-lg transition-colors"
                         >
-                          <Download size={14} className="text-amber-500" strokeWidth={2.5} />
+                          <Download size={14} className="text-amber-500" />
                           <span>Exportar (.APKG)</span>
                         </a>
 
-                        <div className="h-px bg-zinc-200 dark:bg-[#28353d] my-1" />
+                        <div className="h-px bg-border my-1" />
 
                         {/* Excluir Baralho */}
                         <button
@@ -642,9 +822,9 @@ export default function DeckManager({
                             setActiveMenuDeckId(null);
                             handleDeleteDeck(deck.id);
                           }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-colors text-left"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors text-left"
                         >
-                          <Trash2 size={14} strokeWidth={2.5} />
+                          <Trash2 size={14} />
                           <span>Excluir baralho</span>
                         </button>
                       </motion.div>
@@ -657,31 +837,31 @@ export default function DeckManager({
         </div>
       )}
 
-      {/* ═══════════ COLLAPSIBLE ACTIVITY HEATMAP SECTION ═══════════ */}
-      <section className="card-duo bg-white dark:bg-[#182228] p-4 sm:p-5 shadow-sm transition-colors">
+      {/* ═══════════ ACTIVITY HEATMAP (RETENTION & HISTORIC) ═══════════ */}
+      <section className="card-saas p-4 sm:p-5 transition-colors">
         <button
           onClick={() => setShowHeatmap(!showHeatmap)}
           className="w-full flex items-center justify-between text-left group"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-500/15 border-2 border-emerald-300 dark:border-emerald-500/30 flex items-center justify-center text-[#58cc02] shrink-0">
-              <Flame size={20} className="fill-[#58cc02] text-[#58cc02]" />
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+              <Calendar size={16} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-zinc-900 dark:text-zinc-100 group-hover:text-[#58cc02] transition-colors">
-                Consistência & Histórico de Estudos
+              <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                Matriz de Consistência & Histórico
               </h3>
-              <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                {showHeatmap ? "Ocultar gráfico de revisões" : "Clique para visualizar seus últimos 5 meses"}
+              <p className="text-xs text-muted-foreground">
+                {showHeatmap ? "Exibindo os últimos 5 meses de retenção ativa" : "Clique para expandir o histórico de 147 dias"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-zinc-500 dark:text-zinc-400 hidden sm:inline">
-              {showHeatmap ? "Recolher" : "Expandir"}
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              {showHeatmap ? "Ocultar" : "Expandir"}
             </span>
-            <div className="p-2 rounded-xl bg-zinc-100 dark:bg-[#202b33] text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors">
-              {showHeatmap ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            <div className="p-1 rounded-md text-muted-foreground group-hover:text-foreground">
+              {showHeatmap ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </div>
           </div>
         </button>
@@ -704,97 +884,94 @@ export default function DeckManager({
       <AnimatePresence>
         {isModalOpen && (
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
             onClick={() => setIsModalOpen(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="card-duo bg-white dark:bg-[#182228] p-6 w-full max-w-md shadow-2xl transition-colors"
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="card-saas p-6 w-full max-w-md shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Mascot size={32} mood="cheering" />
-                  <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-                    Criar Novo Baralho
-                  </h2>
-                </div>
+              <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+                <h2 className="text-base font-bold text-foreground">
+                  Criar Novo Baralho
+                </h2>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-1 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
 
               <form onSubmit={handleCreateDeck} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"\u00cdcone (Emoji)"}
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                    Ícone Identificador
                   </label>
                   <input
                     type="text"
                     value={icon}
                     onChange={(e) => setIcon(e.target.value)}
-                    className="w-16 p-2.5 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-zinc-50 dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-center text-xl font-bold focus:border-[#58cc02] outline-none"
+                    className="w-14 p-2 rounded-lg border border-border bg-surface text-foreground text-center text-lg font-bold focus:border-primary outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"T\u00edtulo do Baralho"}
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                    Título do Baralho
                   </label>
                   <input
                     type="text"
                     required
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Ex: Espanhol B\u00e1sico, Medicina..."
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-bold focus:border-[#58cc02] outline-none"
+                    placeholder="Ex: Farmacologia Clínica, Vocabulário Alemão..."
+                    className="w-full p-2.5 rounded-lg border border-border bg-surface text-foreground text-xs sm:text-sm focus:border-primary outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"Descri\u00e7\u00e3o (Opcional)"}
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                    Descrição (Opcional)
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="O que voc\u00ea vai aprender neste baralho?"
+                    placeholder="Objetivo de aprendizado deste baralho..."
                     rows={2}
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none resize-none"
+                    className="w-full p-2.5 rounded-lg border border-border bg-surface text-foreground text-xs sm:text-sm focus:border-primary outline-none resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
                     URL da Capa (Opcional)
                   </label>
                   <input
                     type="url"
                     value={coverUrl}
                     onChange={(e) => setCoverUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full p-2.5 rounded-lg border border-border bg-surface text-foreground text-xs focus:border-primary outline-none"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-2.5 pt-2 border-t border-border">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 btn-duo-white py-3 rounded-2xl font-black text-xs uppercase tracking-wider"
+                    className="flex-1 btn-saas-secondary"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 btn-duo-green py-3 rounded-2xl font-black text-xs uppercase tracking-wider shadow-sm"
+                    className="flex-1 btn-saas-primary"
                   >
-                    Criar Baralho
+                    Salvar Baralho
                   </button>
                 </div>
               </form>
@@ -807,70 +984,70 @@ export default function DeckManager({
       <AnimatePresence>
         {isCardModalOpen && (
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
             onClick={() => setIsCardModalOpen(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="card-duo bg-white dark:bg-[#182228] p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto transition-colors"
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="card-saas p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
                 <div className="flex items-center gap-2">
-                  <ImageIcon size={20} className="text-[#58cc02]" />
-                  <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
-                    Adicionar Novo Card
+                  <ImageIcon size={18} className="text-emerald-500" />
+                  <h2 className="text-base font-bold text-foreground">
+                    Novo Flashcard
                   </h2>
                 </div>
                 <button
                   onClick={() => setIsCardModalOpen(false)}
-                  className="p-1 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="p-1 rounded-md text-muted-foreground hover:text-foreground"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
 
               <form onSubmit={handleCreateCard} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"Frente (Pergunta)"}
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                    Frente (Pergunta / Prompt)
                   </label>
-                  <div className="rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] overflow-hidden focus-within:border-[#58cc02]">
+                  <div className="rounded-lg border border-border overflow-hidden focus-within:border-primary">
                     <RichToolbar textareaRef={frontRef} value={front} onChange={setFront} />
                     <textarea
                       ref={frontRef}
                       required
                       value={front}
                       onChange={(e) => setFront(e.target.value)}
-                      placeholder="Ex: Como se diz 'ol\u00e1' em japon\u00eas?"
+                      placeholder="Pergunta ou conceito a ser testado..."
                       rows={2}
-                      className="w-full p-3 bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-semibold outline-none resize-none"
+                      className="w-full p-2.5 bg-surface text-foreground text-xs sm:text-sm outline-none resize-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"Verso (Resposta)"}
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                    Verso (Resposta / Solução)
                   </label>
-                  <div className="rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] overflow-hidden focus-within:border-[#58cc02]">
+                  <div className="rounded-lg border border-border overflow-hidden focus-within:border-primary">
                     <RichToolbar textareaRef={backRef} value={back} onChange={setBack} />
                     <textarea
                       ref={backRef}
                       required
                       value={back}
                       onChange={(e) => setBack(e.target.value)}
-                      placeholder="Ex: Konnichiwa (\u3053\u3093\u306b\u3061\u306f)"
+                      placeholder="Resposta correta e explicação..."
                       rows={3}
-                      className="w-full p-3 bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-semibold outline-none resize-none"
+                      className="w-full p-2.5 bg-surface text-foreground text-xs sm:text-sm outline-none resize-none"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
                     URL da Imagem (Opcional)
                   </label>
                   <input
@@ -878,34 +1055,34 @@ export default function DeckManager({
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-xs font-semibold focus:border-[#58cc02] outline-none"
+                    className="w-full p-2.5 rounded-lg border border-border bg-surface text-foreground text-xs focus:border-primary outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-400 mb-1.5">
-                    {"Dica ou Explica\u00e7\u00e3o Extra (Opcional)"}
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+                    Nota / Dica Adicional (Opcional)
                   </label>
                   <input
                     type="text"
                     value={extra}
                     onChange={(e) => setExtra(e.target.value)}
-                    placeholder="Ex: Usado durante o dia como sauda\u00e7\u00e3o formal"
-                    className="w-full p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] bg-white dark:bg-[#131f24] text-zinc-900 dark:text-zinc-100 text-sm font-semibold focus:border-[#58cc02] outline-none"
+                    placeholder="Contexto ou mnemônica..."
+                    className="w-full p-2.5 rounded-lg border border-border bg-surface text-foreground text-xs sm:text-sm focus:border-primary outline-none"
                   />
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-2.5 pt-2 border-t border-border">
                   <button
                     type="button"
                     onClick={() => setIsCardModalOpen(false)}
-                    className="flex-1 btn-duo-white py-3 rounded-2xl font-black text-xs uppercase tracking-wider"
+                    className="flex-1 btn-saas-secondary"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 btn-duo-green py-3 rounded-2xl font-black text-xs uppercase tracking-wider shadow-sm"
+                    className="flex-1 btn-saas-primary"
                   >
                     Salvar Card
                   </button>
@@ -916,10 +1093,10 @@ export default function DeckManager({
         )}
       </AnimatePresence>
 
-      {/* ═══════════ ANALYTICS MODAL ═══════════ */}
+      {/* ═══════════ MODAL: ANALYTICS ═══════════ */}
       <AnalyticsModal isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} />
 
-      {/* ═══════════ SPEED RUN MODAL ═══════════ */}
+      {/* ═══════════ MODAL: SPEED RUN ═══════════ */}
       <SpeedRunModal
         isOpen={isSpeedRunOpen}
         onClose={() => setIsSpeedRunOpen(false)}
@@ -927,16 +1104,15 @@ export default function DeckManager({
         onSessionComplete={() => router.refresh()}
       />
 
-      {/* ═══════════ XP SHOP MODAL ═══════════ */}
+      {/* ═══════════ MODAL: XP SHOP ═══════════ */}
       <XpShopModal
         isOpen={isShopOpen}
         onClose={() => setIsShopOpen(false)}
         currentXp={currentXp}
         onXpChange={(newXp) => setCurrentXp(newXp)}
-        onCrownUnlocked={() => setHasGoldenCrown(true)}
       />
 
-      {/* ═══════════ EDIT DECK MODAL ═══════════ */}
+      {/* ═══════════ MODAL: EDIT DECK ═══════════ */}
       {editingDeck && (
         <DeckEditModal
           deck={editingDeck}
@@ -945,68 +1121,61 @@ export default function DeckManager({
         />
       )}
 
-      {/* ═══════════ MODAL: RESULTADO DA IMPORTAÇÃO APKG ═══════════ */}
+      {/* ═══════════ MODAL: RESULTADO IMPORTAÇÃO APKG ═══════════ */}
       <AnimatePresence>
         {importResult && (
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity"
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
             onClick={() => setImportResult(null)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="card-duo bg-white dark:bg-[#182228] p-6 sm:p-7 w-full max-w-md shadow-2xl text-center transition-colors border-2 border-zinc-200 dark:border-[#28353d]"
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="card-saas p-6 w-full max-w-md shadow-xl text-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-center mb-3">
-                <Mascot size={90} mood="cheering" />
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto mb-3">
+                <CheckCircle2 size={24} />
               </div>
 
-              <span className="text-[11px] font-black uppercase tracking-wider text-[#58cc02] bg-emerald-50 dark:bg-emerald-500/15 px-3 py-1 rounded-xl border border-emerald-300 dark:border-emerald-500/30">
-                {"Importa\u00e7\u00e3o Conclu\u00edda!"}
-              </span>
-
-              <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-white mt-2 mb-1">
-                {importResult.totalImported > 0
-                  ? `+${importResult.totalImported} Cards Adicionados!`
-                  : "Nenhum Card Novo"}
+              <h2 className="text-lg font-bold text-foreground">
+                Importação Concluída
               </h2>
-
-              <p className="text-xs sm:text-sm font-semibold text-zinc-600 dark:text-zinc-400 mb-4">
-                {"Seus flashcards foram processados com o leitor nativo do Anki e est\u00e3o prontos para estudo."}
+              <p className="text-xs text-muted-foreground mt-1 mb-4">
+                O pacote Anki foi processado e adicionado ao seu banco de dados com sucesso.
               </p>
 
-              {/* Summary stats */}
               <div className="grid grid-cols-2 gap-2 mb-4">
-                <div className="card-duo bg-zinc-50 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] p-3 text-center">
-                  <span className="text-[10px] text-zinc-500 font-black uppercase block">
-                    Adicionados
+                <div className="p-3 rounded-lg bg-muted/15 border border-border">
+                  <span className="text-[10px] font-semibold uppercase text-muted-foreground block">
+                    Cards Adicionados
                   </span>
-                  <span className="text-lg font-black text-[#58cc02]">
+                  <span className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
                     +{importResult.totalImported}
                   </span>
                 </div>
-                <div className="card-duo bg-zinc-50 dark:bg-[#131f24] border-zinc-200 dark:border-[#28353d] p-3 text-center">
-                  <span className="text-[10px] text-zinc-500 font-black uppercase block">
-                    {"Duplicatas Ignoradas"}
+                <div className="p-3 rounded-lg bg-muted/15 border border-border">
+                  <span className="text-[10px] font-semibold uppercase text-muted-foreground block">
+                    Duplicatas Ignoradas
                   </span>
-                  <span className="text-lg font-black text-amber-500">
+                  <span className="text-lg font-bold font-mono text-amber-500">
                     {importResult.totalSkipped}
                   </span>
                 </div>
               </div>
 
-              {/* List of affected decks */}
               {importResult.decks.length > 0 && (
-                <div className="text-left bg-zinc-50 dark:bg-[#131f24] p-3 rounded-2xl border-2 border-zinc-200 dark:border-[#28353d] max-h-36 overflow-y-auto mb-5 space-y-2">
-                  <span className="text-[10px] font-black uppercase text-zinc-400 block">
-                    {"Baralhos Atualizados:"}
+                <div className="text-left bg-muted/10 p-3 rounded-lg border border-border max-h-36 overflow-y-auto mb-4 space-y-1.5 text-xs">
+                  <span className="text-[10px] font-semibold uppercase text-muted-foreground block">
+                    Baralhos Atualizados:
                   </span>
                   {importResult.decks.map((d, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                    <div key={idx} className="flex justify-between items-center text-foreground">
                       <span className="truncate pr-2">{d.title}</span>
-                      <span className="text-[#58cc02] shrink-0 font-black">+{d.importedCards} cards</span>
+                      <span className="font-mono text-emerald-600 dark:text-emerald-400 shrink-0 font-semibold">
+                        +{d.importedCards}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -1014,9 +1183,9 @@ export default function DeckManager({
 
               <button
                 onClick={() => setImportResult(null)}
-                className="w-full btn-duo-green py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider shadow-sm"
+                className="w-full btn-saas-primary"
               >
-                Continuar
+                Concluir
               </button>
             </motion.div>
           </div>
